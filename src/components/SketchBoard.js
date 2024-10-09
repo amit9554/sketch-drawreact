@@ -213,29 +213,29 @@ export default function SketchingBoard() {
                                     selectedPartIndex === index
                                         ? {
                                               topLeft: {
-                                                  width: "12px",
-                                                  height: "12px",
+                                                  width: "5px",
+                                                  height: "5px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "nw-resize",
                                               },
                                               topRight: {
-                                                  width: "12px",
-                                                  height: "12px",
+                                                  width: "5px",
+                                                  height: "5px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "ne-resize",
                                               },
                                               bottomLeft: {
-                                                  width: "12px",
-                                                  height: "12px",
+                                                  width: "5px",
+                                                  height: "5px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "sw-resize",
                                               },
                                               bottomRight: {
-                                                  width: "12px",
-                                                  height: "12px",
+                                                  width: "5px",
+                                                  height: "5px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "se-resize",
