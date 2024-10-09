@@ -186,37 +186,37 @@ export default function SketchingBoard() {
                                         ...position,
                                     });
                                 }}
-                                onClick={() => setSelectedPartIndex(index)} // Set selected part on click
+                                onClick={() => setSelectedPartIndex(index)}
                                 style={{
-                                    border: selectedPartIndex === index ? "2px solid blue" : "none", // Highlight selected part
+                                    border: selectedPartIndex === index ? "2px solid blue" : "none",
                                 }}
                                 resizeHandleStyles={
                                     selectedPartIndex === index
                                         ? {
                                               topLeft: {
-                                                  width: "12px",
-                                                  height: "12px",
+                                                  width: "5px",
+                                                  height: "5px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "nw-resize",
                                               },
                                               topRight: {
-                                                  width: "12px",
-                                                  height: "12px",
+                                                  width: "5px",
+                                                  height: "5px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "ne-resize",
                                               },
                                               bottomLeft: {
-                                                  width: "12px",
-                                                  height: "12px",
+                                                  width: "5px",
+                                                  height: "5px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "sw-resize",
                                               },
                                               bottomRight: {
-                                                  width: "12px",
-                                                  height: "12px",
+                                                  width: "5px",
+                                                  height: "5px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "se-resize",
