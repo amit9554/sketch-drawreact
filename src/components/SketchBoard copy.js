@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Grid, Box, Paper, Typography } from "@mui/material";
+import { Grid, Box, Paper, Typography, Button } from "@mui/material";
 import { Rnd } from "react-rnd";
 
 // Constants for item types
@@ -9,7 +9,7 @@ const ItemTypes = {
     BODY_PART: "body_part",
 };
 
-// PNG images for body parts (make sure these exist in your public/assets/images directory)
+// PNG images for body parts
 const bodyParts = [
     { id: 1, name: "Eye", image: require("./assets/images/eyes/01.png") },
     { id: 2, name: "Eyebrow", image: require("./assets/images/eyebrows/01.png") },
@@ -17,7 +17,6 @@ const bodyParts = [
     { id: 4, name: "Head", image: require("./assets/images/head/01.png") },
     { id: 5, name: "Lips", image: require("./assets/images/lips/01.png") },
     { id: 6, name: "Nose", image: require("./assets/images/nose/01.png") },
-
 ];
 
 // Draggable component for body parts
@@ -71,7 +70,7 @@ function DropZone({ onDrop, children }) {
             ref={drop}
             sx={{
                 width: "100%",
-                height: 500,
+                height: 700, // Increased height
                 border: "2px dashed gray",
                 backgroundColor: isOver ? "lightyellow" : "white",
                 display: "flex",
@@ -88,7 +87,7 @@ function DropZone({ onDrop, children }) {
 // Main SketchingBoard Component
 export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
-
+    const [selectedPartIndex, setSelectedPartIndex] = useState(null); // For selected part
     const handleDrop = (part) => {
         setPlacedParts((prevParts) => [
             ...prevParts,
@@ -103,6 +102,20 @@ export default function SketchingBoard() {
             ...newPosition,
         };
         setPlacedParts(newParts);
+    };
+
+    const handleRemovePart = () => {
+        if (selectedPartIndex !== null) {
+            setPlacedParts((prevParts) =>
+                prevParts.filter((_, i) => i !== selectedPartIndex)
+            );
+            setSelectedPartIndex(null); // Clear selection
+        }
+    };
+
+    const handleRemoveAll = () => {
+        setPlacedParts([]);
+        setSelectedPartIndex(null); // Clear selection
     };
 
     return (
@@ -127,6 +140,28 @@ export default function SketchingBoard() {
                     <Typography variant="h5" gutterBottom>
                         Sketching Board
                     </Typography>
+
+                    {/* Control Buttons */}
+                    <Box sx={{ display: "flex", gap: 2, marginBottom: 2 }}>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={handleRemoveAll}
+                        >
+                            Remove All
+                        </Button>
+
+                        {selectedPartIndex !== null && (
+                            <Button
+                                variant="contained"
+                                color="error"
+                                onClick={handleRemovePart}
+                            >
+                                Delete
+                            </Button>
+                        )}
+                    </Box>
+
                     <DropZone onDrop={handleDrop}>
                         {/* Render Placed Parts */}
                         {placedParts.map((part, index) => (
@@ -135,88 +170,60 @@ export default function SketchingBoard() {
                                 bounds="parent"
                                 size={{ width: part.width, height: part.height }}
                                 position={{ x: part.x, y: part.y }}
-                                onDragStop={(e, d) => handleResizeOrDrag(index, { x: d.x, y: d.y })}
-                                onResizeStop={(e, direction, ref, delta, position) => {
+                                onDragStop={(e, d) =>
+                                    handleResizeOrDrag(index, { x: d.x, y: d.y })
+                                }
+                                onResizeStop={(
+                                    e,
+                                    direction,
+                                    ref,
+                                    delta,
+                                    position
+                                ) => {
                                     handleResizeOrDrag(index, {
                                         width: ref.style.width,
                                         height: ref.style.height,
                                         ...position,
                                     });
                                 }}
-                                resizeHandleStyles={{
-                                    topLeft: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "nw-resize",
-                                    },
-                                    topRight: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "ne-resize",
-                                    },
-                                    bottomLeft: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "sw-resize",
-                                    },
-                                    bottomRight: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "se-resize",
-                                    },
-                                    left: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "w-resize",
-                                        position: "absolute",
-                                        left: "-6px",
-                                        top: "50%",
-                                        transform: "translateY(-50%)",
-                                    },
-                                    right: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "e-resize",
-                                        position: "absolute",
-                                        right: "-6px",
-                                        top: "50%",
-                                        transform: "translateY(-50%)",
-                                    },
-                                    top: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "n-resize",
-                                        position: "absolute",
-                                        top: "-6px",
-                                        left: "50%",
-                                        transform: "translateX(-50%)",
-                                    },
-                                    bottom: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "s-resize",
-                                        position: "absolute",
-                                        bottom: "-6px",
-                                        left: "50%",
-                                        transform: "translateX(-50%)",
-                                    },
+                                onClick={() => setSelectedPartIndex(index)}
+                                style={{
+                                    border: selectedPartIndex === index ? "2px solid blue" : "none",
                                 }}
+                                resizeHandleStyles={
+                                    selectedPartIndex === index
+                                        ? {
+                                              topLeft: {
+                                                  width: "5px",
+                                                  height: "5px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "nw-resize",
+                                              },
+                                              topRight: {
+                                                  width: "5px",
+                                                  height: "5px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "ne-resize",
+                                              },
+                                              bottomLeft: {
+                                                  width: "5px",
+                                                  height: "5px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "sw-resize",
+                                              },
+                                              bottomRight: {
+                                                  width: "5px",
+                                                  height: "5px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "se-resize",
+                                              },
+                                          }
+                                        : {}
+                                } // Only show resize handles on the selected part
                             >
                                 <img
                                     src={part.image}
@@ -228,7 +235,6 @@ export default function SketchingBoard() {
                                     }}
                                 />
                             </Rnd>
-
                         ))}
                     </DropZone>
                 </Grid>
