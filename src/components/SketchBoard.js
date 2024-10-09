@@ -143,25 +143,30 @@ export default function SketchingBoard() {
         }
     };
 
+    // Jump to a specific placed part
+    const handleJumpToPart = (index) => {
+        setSelectedPartIndex(index);
+    };
+
     return (
         <DndProvider backend={HTML5Backend}>
             <Grid container spacing={2}>
                 {/* Left Panel: Body Parts */}
-                <Grid item xs={4}>
+                <Grid item xs={2}>
                     <Typography variant="h5" gutterBottom>
                         Body Parts
                     </Typography>
-                    <Grid container spacing={2}>
+                    <Grid container spacing={3}>
                         {bodyParts.map((part) => (
-                            <Grid item xs={6} key={part.id}>
+                            <Grid item xs={12} key={part.id}>
                                 <DraggablePart part={part} />
                             </Grid>
                         ))}
                     </Grid>
                 </Grid>
 
-                {/* Right Panel: Sketch Board */}
-                <Grid item xs={8}>
+                {/* Right Panel: Sketch Board and Steps */}
+                <Grid item xs={9}>
                     <Typography variant="h5" gutterBottom>
                         Sketching Board
                     </Typography>
@@ -240,8 +245,32 @@ export default function SketchingBoard() {
                                 />
                             </Rnd>
                         ))}
-                    </DropZone>
+                    </DropZone>                    
                 </Grid>
+                <Grid item xs={1}>
+                  <Typography variant="h6">Steps</Typography>
+                        <Box>
+                            {placedParts.map((part, index) => (
+                                <Button
+                                    key={index}
+                                    variant="outlined"
+                                    onClick={() => handleJumpToPart(index)}
+                                    sx={{
+                                        display: "block",
+                                        margin: "5px 0",
+                                        width: "100%",
+                                        textAlign: "left",
+                                        backgroundColor: selectedPartIndex === index ? "lightblue" : "white",
+                                        "&:hover": {
+                                            backgroundColor: selectedPartIndex === index ? "lightblue" : "#f0f0f0", // Change background color on hover
+                                        },
+                                    }}
+                                >
+                                    {part.name}
+                                </Button>
+                            ))}
+                        </Box>
+                </Grid>                     
             </Grid>
         </DndProvider>
     );
