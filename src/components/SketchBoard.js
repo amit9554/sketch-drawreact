@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Grid, Box, Paper, Typography, Button } from "@mui/material";
@@ -41,7 +41,6 @@ function DraggablePart({ part }) {
             }}
         >
             <Typography variant="h6">{part.name}</Typography>
-            {/* Display PNG Image */}
             <img
                 src={part.image}
                 alt={part.name}
@@ -147,6 +146,56 @@ export default function SketchingBoard() {
     const handleJumpToPart = (index) => {
         setSelectedPartIndex(index);
     };
+    // Keyboard arrow key handling
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (selectedPartIndex !== null) {
+                const newParts = [...placedParts];
+                const moveAmount = 5; // Amount to move per key press
+                const resizeAmount = 5; // Amount to resize per key press
+
+                switch (e.key) {
+                    case "ArrowUp":
+                        newParts[selectedPartIndex].y -= moveAmount;
+                        break;
+                    case "ArrowDown":
+                        newParts[selectedPartIndex].y += moveAmount;
+                        break;
+                    case "ArrowLeft":
+                        newParts[selectedPartIndex].x -= moveAmount;
+                        break;
+                    case "ArrowRight":
+                        newParts[selectedPartIndex].x += moveAmount;
+                        break;
+                    case "+":
+                    case "=":
+                        if (e.ctrlKey) {
+                            newParts[selectedPartIndex].width += resizeAmount;
+                            newParts[selectedPartIndex].height += resizeAmount;
+                        }
+                        break;
+                    case "-":
+                        if (e.ctrlKey) {
+                            newParts[selectedPartIndex].width -= resizeAmount;
+                            newParts[selectedPartIndex].height -= resizeAmount;
+                        }
+                        break;
+                    default:
+                        return; // Exit if it's not an arrow key
+                }
+
+                setPlacedParts(newParts);
+                e.preventDefault(); // Prevent scrolling when arrow keys are pressed
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+
+        // Cleanup the event listener on component unmount
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [selectedPartIndex, placedParts]);
 
     return (
         <DndProvider backend={HTML5Backend}>
@@ -232,7 +281,6 @@ export default function SketchingBoard() {
                                     border: selectedPartIndex === index ? "2px solid blue" : "none", // Highlight selected part
                                 }}
                                 disableDragging={part.locked} // Disable dragging if locked
-                                disableResizing={part.locked} // Disable resizing if locked
                             >
                                 <img
                                     src={part.image}
