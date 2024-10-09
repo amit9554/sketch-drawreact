@@ -59,7 +59,7 @@ function DraggablePart({ part }) {
 function DropZone({ onDrop, children, onClick }) {
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.BODY_PART,
-        drop: (item, monitor) => onDrop(item.part, monitor), // Pass monitor here
+        drop: (item, monitor) => onDrop(item.part, monitor),
         collect: (monitor) => ({
             isOver: !!monitor.isOver(),
         }),
@@ -68,7 +68,7 @@ function DropZone({ onDrop, children, onClick }) {
     return (
         <Box
             ref={drop}
-            id="drop-zone" // Add id to DropZone
+            id="drop-zone"
             sx={{
                 width: "100%",
                 height: 700,
@@ -79,7 +79,7 @@ function DropZone({ onDrop, children, onClick }) {
                 justifyContent: "center",
                 position: "relative",
             }}
-            onClick={onClick} // Click handler for the DropZone
+            onClick={onClick}
         >
             {children}
         </Box>
@@ -102,7 +102,7 @@ export default function SketchingBoard() {
 
         setPlacedParts((prevParts) => [
             ...prevParts,
-            { ...part, width: 80, height: 80, x, y }, // Set x and y based on the drop position
+            { ...part, width: 80, height: 80, x, y, locked: false }, // Set x, y and initial locked state
         ]);
     };
 
@@ -132,6 +132,15 @@ export default function SketchingBoard() {
     // Handle clicking outside an image (DropZone click)
     const handleClickOutside = () => {
         setSelectedPartIndex(null); // Deselect any selected part
+    };
+
+    // Toggle lock state
+    const handleLockToggle = () => {
+        if (selectedPartIndex !== null) {
+            const newParts = [...placedParts];
+            newParts[selectedPartIndex].locked = !newParts[selectedPartIndex].locked;
+            setPlacedParts(newParts);
+        }
     };
 
     return (
@@ -168,13 +177,23 @@ export default function SketchingBoard() {
                         </Button>
 
                         {selectedPartIndex !== null && (
-                            <Button
-                                variant="contained"
-                                color="error"
-                                onClick={handleRemovePart}
-                            >
-                                Delete
-                            </Button>
+                            <>
+                                <Button
+                                    variant="contained"
+                                    color={placedParts[selectedPartIndex]?.locked ? "primary" : "default"}
+                                    onClick={handleLockToggle}
+                                >
+                                    {placedParts[selectedPartIndex]?.locked ? "Unlock" : "Lock"}
+                                </Button>
+
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    onClick={handleRemovePart}
+                                >
+                                    Delete
+                                </Button>
+                            </>
                         )}
                     </Box>
 
@@ -186,21 +205,19 @@ export default function SketchingBoard() {
                                 bounds="parent"
                                 size={{ width: part.width, height: part.height }}
                                 position={{ x: part.x, y: part.y }}
-                                onDragStop={(e, d) =>
-                                    handleResizeOrDrag(index, { x: d.x, y: d.y })
-                                }
-                                onResizeStop={(
-                                    e,
-                                    direction,
-                                    ref,
-                                    delta,
-                                    position
-                                ) => {
-                                    handleResizeOrDrag(index, {
-                                        width: ref.style.width,
-                                        height: ref.style.height,
-                                        ...position,
-                                    });
+                                onDragStop={(e, d) => {
+                                    if (!part.locked) {
+                                        handleResizeOrDrag(index, { x: d.x, y: d.y });
+                                    }
+                                }}
+                                onResizeStop={(e, direction, ref, delta, position) => {
+                                    if (!part.locked) {
+                                        handleResizeOrDrag(index, {
+                                            width: ref.offsetWidth,
+                                            height: ref.offsetHeight,
+                                            ...position,
+                                        });
+                                    }
                                 }}
                                 onClick={(e) => {
                                     e.stopPropagation(); // Prevent click event from propagating to DropZone
@@ -209,40 +226,8 @@ export default function SketchingBoard() {
                                 style={{
                                     border: selectedPartIndex === index ? "2px solid blue" : "none", // Highlight selected part
                                 }}
-                                resizeHandleStyles={
-                                    selectedPartIndex === index
-                                        ? {
-                                              topLeft: {
-                                                  width: "5px",
-                                                  height: "5px",
-                                                  backgroundColor: "black",
-                                                  border: "2px solid white",
-                                                  cursor: "nw-resize",
-                                              },
-                                              topRight: {
-                                                  width: "5px",
-                                                  height: "5px",
-                                                  backgroundColor: "black",
-                                                  border: "2px solid white",
-                                                  cursor: "ne-resize",
-                                              },
-                                              bottomLeft: {
-                                                  width: "5px",
-                                                  height: "5px",
-                                                  backgroundColor: "black",
-                                                  border: "2px solid white",
-                                                  cursor: "sw-resize",
-                                              },
-                                              bottomRight: {
-                                                  width: "5px",
-                                                  height: "5px",
-                                                  backgroundColor: "black",
-                                                  border: "2px solid white",
-                                                  cursor: "se-resize",
-                                              },
-                                          }
-                                        : {}
-                                } // Only show resize handles on the selected part
+                                disableDragging={part.locked} // Disable dragging if locked
+                                disableResizing={part.locked} // Disable resizing if locked
                             >
                                 <img
                                     src={part.image}
