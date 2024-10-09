@@ -56,10 +56,10 @@ function DraggablePart({ part }) {
 }
 
 // Drop area component
-function DropZone({ onDrop, children }) {
+function DropZone({ onDrop, children, onClick }) {
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.BODY_PART,
-        drop: (item) => onDrop(item.part),
+        drop: (item, monitor) => onDrop(item.part, monitor), // Pass monitor here
         collect: (monitor) => ({
             isOver: !!monitor.isOver(),
         }),
@@ -68,9 +68,10 @@ function DropZone({ onDrop, children }) {
     return (
         <Box
             ref={drop}
+            id="drop-zone" // Add id to DropZone
             sx={{
                 width: "100%",
-                height: 700, // Increased height
+                height: 700,
                 border: "2px dashed gray",
                 backgroundColor: isOver ? "lightyellow" : "white",
                 display: "flex",
@@ -78,6 +79,7 @@ function DropZone({ onDrop, children }) {
                 justifyContent: "center",
                 position: "relative",
             }}
+            onClick={onClick} // Click handler for the DropZone
         >
             {children}
         </Box>
@@ -88,10 +90,19 @@ function DropZone({ onDrop, children }) {
 export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
     const [selectedPartIndex, setSelectedPartIndex] = useState(null); // For selected part
-    const handleDrop = (part) => {
+
+    const handleDrop = (part, monitor) => {
+        const dropZone = document.getElementById("drop-zone");
+        const dropZoneRect = dropZone.getBoundingClientRect(); // Get DropZone dimensions
+        const clientOffset = monitor.getClientOffset(); // Get mouse position on drop
+
+        // Calculate relative position within the DropZone
+        const x = clientOffset.x - dropZoneRect.left;
+        const y = clientOffset.y - dropZoneRect.top;
+
         setPlacedParts((prevParts) => [
             ...prevParts,
-            { ...part, width: 80, height: 80, x: 50, y: 50 },
+            { ...part, width: 80, height: 80, x, y }, // Set x and y based on the drop position
         ]);
     };
 
@@ -116,6 +127,11 @@ export default function SketchingBoard() {
     const handleRemoveAll = () => {
         setPlacedParts([]);
         setSelectedPartIndex(null); // Clear selection
+    };
+
+    // Handle clicking outside an image (DropZone click)
+    const handleClickOutside = () => {
+        setSelectedPartIndex(null); // Deselect any selected part
     };
 
     return (
@@ -162,7 +178,7 @@ export default function SketchingBoard() {
                         )}
                     </Box>
 
-                    <DropZone onDrop={handleDrop}>
+                    <DropZone onDrop={handleDrop} onClick={handleClickOutside}>
                         {/* Render Placed Parts */}
                         {placedParts.map((part, index) => (
                             <Rnd
@@ -186,37 +202,40 @@ export default function SketchingBoard() {
                                         ...position,
                                     });
                                 }}
-                                onClick={() => setSelectedPartIndex(index)}
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Prevent click event from propagating to DropZone
+                                    setSelectedPartIndex(index); // Set selected part on click
+                                }}
                                 style={{
-                                    border: selectedPartIndex === index ? "2px solid blue" : "none",
+                                    border: selectedPartIndex === index ? "2px solid blue" : "none", // Highlight selected part
                                 }}
                                 resizeHandleStyles={
                                     selectedPartIndex === index
                                         ? {
                                               topLeft: {
-                                                  width: "5px",
-                                                  height: "5px",
+                                                  width: "12px",
+                                                  height: "12px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "nw-resize",
                                               },
                                               topRight: {
-                                                  width: "5px",
-                                                  height: "5px",
+                                                  width: "12px",
+                                                  height: "12px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "ne-resize",
                                               },
                                               bottomLeft: {
-                                                  width: "5px",
-                                                  height: "5px",
+                                                  width: "12px",
+                                                  height: "12px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "sw-resize",
                                               },
                                               bottomRight: {
-                                                  width: "5px",
-                                                  height: "5px",
+                                                  width: "12px",
+                                                  height: "12px",
                                                   backgroundColor: "black",
                                                   border: "2px solid white",
                                                   cursor: "se-resize",
