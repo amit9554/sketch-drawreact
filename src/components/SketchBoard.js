@@ -146,6 +146,7 @@ export default function SketchingBoard() {
     const handleJumpToPart = (index) => {
         setSelectedPartIndex(index);
     };
+
     // Keyboard arrow key handling
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -196,6 +197,7 @@ export default function SketchingBoard() {
             window.removeEventListener("keydown", handleKeyDown);
         };
     }, [selectedPartIndex, placedParts]);
+
 
     return (
         <DndProvider backend={HTML5Backend}>
