@@ -87,7 +87,9 @@ function DropZone({ onDrop, children }) {
 // Main SketchingBoard Component
 export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
-
+    const [selectedPartIndex, setSelectedPartIndex] = useState(null); // For selected part
+    const [undoStack, setUndoStack] = useState([]); // To store history for undo
+    const [redoStack, setRedoStack] = useState([]); // To store history for redo
     const handleDrop = (part) => {
         setPlacedParts((prevParts) => [
             ...prevParts,
@@ -104,14 +106,36 @@ export default function SketchingBoard() {
         setPlacedParts(newParts);
     };
 
-    const handleRemovePart = (index) => {
-        setPlacedParts((prevParts) => prevParts.filter((_, i) => i !== index));
+    const handleRemovePart = () => {
+        if (selectedPartIndex !== null) {
+            setPlacedParts((prevParts) =>
+                prevParts.filter((_, i) => i !== selectedPartIndex)
+            );
+            setSelectedPartIndex(null); // Clear selection
+        }
     };
 
     const handleRemoveAll = () => {
         setPlacedParts([]);
+        setSelectedPartIndex(null); // Clear selection
+    };
+    const handleUndo = () => {
+        if (undoStack.length > 0) {
+            const previousState = undoStack[undoStack.length - 1];
+            setRedoStack([...redoStack, placedParts]); // Push current state to redo stack
+            setPlacedParts(previousState); // Restore previous state
+            setUndoStack(undoStack.slice(0, undoStack.length - 1)); // Remove the last action from undo stack
+        }
     };
 
+    const handleRedo = () => {
+        if (redoStack.length > 0) {
+            const nextState = redoStack[redoStack.length - 1];
+            setUndoStack([...undoStack, placedParts]); // Push current state to undo stack
+            setPlacedParts(nextState); // Restore next state
+            setRedoStack(redoStack.slice(0, redoStack.length - 1)); // Remove the last action from redo stack
+        }
+    };
     return (
         <DndProvider backend={HTML5Backend}>
             <Grid container spacing={2}>
@@ -135,16 +159,43 @@ export default function SketchingBoard() {
                         Sketching Board
                     </Typography>
 
-                    {/* Remove All button moved to the left */}
-                    <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
+                    {/* Control Buttons */}
+                    <Box sx={{ display: "flex", gap: 2, marginBottom: 2 }}>
                         <Button
                             variant="contained"
                             color="secondary"
                             onClick={handleRemoveAll}
-                            style={{ marginBottom: "20px" }}
                         >
                             Remove All
                         </Button>
+
+                        {selectedPartIndex !== null && (
+                            <Button
+                                variant="contained"
+                                color="error"
+                                onClick={handleRemovePart}
+                            >
+                                delete
+                            </Button>
+                            
+                        )}
+                        {/* <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleUndo}
+                            disabled={undoStack.length === 0}
+                        >
+                            Undo
+                        </Button>
+
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleRedo}
+                            disabled={redoStack.length === 0}
+                        >
+                            Redo
+                        </Button> */}
                     </Box>
 
                     <DropZone onDrop={handleDrop}>
@@ -171,6 +222,7 @@ export default function SketchingBoard() {
                                         ...position,
                                     });
                                 }}
+                                onClick={() => setSelectedPartIndex(index)} // Set selected part on click
                                 resizeHandleStyles={{
                                     topLeft: {
                                         width: "12px",
@@ -202,30 +254,15 @@ export default function SketchingBoard() {
                                     },
                                 }}
                             >
-                                <div style={{ position: "relative" }}>
-                                    <img
-                                        src={part.image}
-                                        alt={part.name}
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "contain",
-                                        }}
-                                    />
-                                    <Button
-                                        size="small"
-                                        style={{
-                                            position: "absolute",
-                                            top: 0,
-                                            right: 0,
-                                            background: "red",
-                                            color: "white",
-                                        }}
-                                        onClick={() => handleRemovePart(index)}
-                                    >
-                                        Remove
-                                    </Button>
-                                </div>
+                                <img
+                                    src={part.image}
+                                    alt={part.name}
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "contain",
+                                    }}
+                                />
                             </Rnd>
                         ))}
                     </DropZone>
