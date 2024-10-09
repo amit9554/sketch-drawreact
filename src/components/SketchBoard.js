@@ -88,7 +88,6 @@ function DropZone({ onDrop, children }) {
 export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
     const [selectedPartIndex, setSelectedPartIndex] = useState(null); // For selected part
-
     const handleDrop = (part) => {
         setPlacedParts((prevParts) => [
             ...prevParts,
@@ -188,58 +187,43 @@ export default function SketchingBoard() {
                                     });
                                 }}
                                 onClick={() => setSelectedPartIndex(index)} // Set selected part on click
-                                resizeHandleStyles={{
-                                    topLeft: {
-                                        width: "5px",
-                                        height: "5px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "nw-resize",
-                                    },
-                                    topRight: {
-                                        width: "5px",
-                                        height: "5px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "ne-resize",
-                                    },
-                                    bottomLeft: {
-                                        width: "5px",
-                                        height: "5px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "sw-resize",
-                                    },
-                                    bottomRight: {
-                                        width: "5px",
-                                        height: "5px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "se-resize",
-                                    },
-                                    top: {
-                                        width: "10px",
-                                        height: "10px",
-                                        backgroundColor: "black",
-                                        borderRadius: "50%",
-                                        position: "absolute",
-                                        left: "50%",
-                                        transform: "translateX(-50%)",
-                                        cursor: "ns-resize",
-                                        top: -5,
-                                    },
-                                    bottom: {
-                                        width: "10px",
-                                        height: "10px",
-                                        backgroundColor: "black",
-                                        borderRadius: "50%",
-                                        position: "absolute",
-                                        left: "50%",
-                                        transform: "translateX(-50%)",
-                                        cursor: "ns-resize",
-                                        bottom: -5,
-                                    },
+                                style={{
+                                    border: selectedPartIndex === index ? "2px solid blue" : "none", // Highlight selected part
                                 }}
+                                resizeHandleStyles={
+                                    selectedPartIndex === index
+                                        ? {
+                                              topLeft: {
+                                                  width: "12px",
+                                                  height: "12px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "nw-resize",
+                                              },
+                                              topRight: {
+                                                  width: "12px",
+                                                  height: "12px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "ne-resize",
+                                              },
+                                              bottomLeft: {
+                                                  width: "12px",
+                                                  height: "12px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "sw-resize",
+                                              },
+                                              bottomRight: {
+                                                  width: "12px",
+                                                  height: "12px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "se-resize",
+                                              },
+                                          }
+                                        : {}
+                                } // Only show resize handles on the selected part
                             >
                                 <img
                                     src={part.image}
