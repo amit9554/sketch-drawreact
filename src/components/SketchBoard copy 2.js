@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Grid, Box, Paper, Typography, Button } from "@mui/material";
+import { Grid, Box, Paper, Typography } from "@mui/material";
 import { Rnd } from "react-rnd";
 
 // Constants for item types
@@ -9,7 +9,7 @@ const ItemTypes = {
     BODY_PART: "body_part",
 };
 
-// PNG images for body parts
+// PNG images for body parts (make sure these exist in your public/assets/images directory)
 const bodyParts = [
     { id: 1, name: "Eye", image: require("./assets/images/eyes/01.png") },
     { id: 2, name: "Eyebrow", image: require("./assets/images/eyebrows/01.png") },
@@ -17,6 +17,7 @@ const bodyParts = [
     { id: 4, name: "Head", image: require("./assets/images/head/01.png") },
     { id: 5, name: "Lips", image: require("./assets/images/lips/01.png") },
     { id: 6, name: "Nose", image: require("./assets/images/nose/01.png") },
+
 ];
 
 // Draggable component for body parts
@@ -70,7 +71,7 @@ function DropZone({ onDrop, children }) {
             ref={drop}
             sx={{
                 width: "100%",
-                height: 700, // Increased height
+                height: 500,
                 border: "2px dashed gray",
                 backgroundColor: isOver ? "lightyellow" : "white",
                 display: "flex",
@@ -104,14 +105,6 @@ export default function SketchingBoard() {
         setPlacedParts(newParts);
     };
 
-    const handleRemovePart = (index) => {
-        setPlacedParts((prevParts) => prevParts.filter((_, i) => i !== index));
-    };
-
-    const handleRemoveAll = () => {
-        setPlacedParts([]);
-    };
-
     return (
         <DndProvider backend={HTML5Backend}>
             <Grid container spacing={2}>
@@ -134,19 +127,6 @@ export default function SketchingBoard() {
                     <Typography variant="h5" gutterBottom>
                         Sketching Board
                     </Typography>
-
-                    {/* Remove All button moved to the left */}
-                    <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            onClick={handleRemoveAll}
-                            style={{ marginBottom: "20px" }}
-                        >
-                            Remove All
-                        </Button>
-                    </Box>
-
                     <DropZone onDrop={handleDrop}>
                         {/* Render Placed Parts */}
                         {placedParts.map((part, index) => (
@@ -155,16 +135,8 @@ export default function SketchingBoard() {
                                 bounds="parent"
                                 size={{ width: part.width, height: part.height }}
                                 position={{ x: part.x, y: part.y }}
-                                onDragStop={(e, d) =>
-                                    handleResizeOrDrag(index, { x: d.x, y: d.y })
-                                }
-                                onResizeStop={(
-                                    e,
-                                    direction,
-                                    ref,
-                                    delta,
-                                    position
-                                ) => {
+                                onDragStop={(e, d) => handleResizeOrDrag(index, { x: d.x, y: d.y })}
+                                onResizeStop={(e, direction, ref, delta, position) => {
                                     handleResizeOrDrag(index, {
                                         width: ref.style.width,
                                         height: ref.style.height,
@@ -200,33 +172,63 @@ export default function SketchingBoard() {
                                         border: "2px solid white",
                                         cursor: "se-resize",
                                     },
+                                    left: {
+                                        width: "12px",
+                                        height: "12px",
+                                        backgroundColor: "black",
+                                        border: "2px solid white",
+                                        cursor: "w-resize",
+                                        position: "absolute",
+                                        left: "-6px",
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                    },
+                                    right: {
+                                        width: "12px",
+                                        height: "12px",
+                                        backgroundColor: "black",
+                                        border: "2px solid white",
+                                        cursor: "e-resize",
+                                        position: "absolute",
+                                        right: "-6px",
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                    },
+                                    top: {
+                                        width: "12px",
+                                        height: "12px",
+                                        backgroundColor: "black",
+                                        border: "2px solid white",
+                                        cursor: "n-resize",
+                                        position: "absolute",
+                                        top: "-6px",
+                                        left: "50%",
+                                        transform: "translateX(-50%)",
+                                    },
+                                    bottom: {
+                                        width: "12px",
+                                        height: "12px",
+                                        backgroundColor: "black",
+                                        border: "2px solid white",
+                                        cursor: "s-resize",
+                                        position: "absolute",
+                                        bottom: "-6px",
+                                        left: "50%",
+                                        transform: "translateX(-50%)",
+                                    },
                                 }}
                             >
-                                <div style={{ position: "relative" }}>
-                                    <img
-                                        src={part.image}
-                                        alt={part.name}
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "contain",
-                                        }}
-                                    />
-                                    <Button
-                                        size="small"
-                                        style={{
-                                            position: "absolute",
-                                            top: 0,
-                                            right: 0,
-                                            background: "red",
-                                            color: "white",
-                                        }}
-                                        onClick={() => handleRemovePart(index)}
-                                    >
-                                        Remove
-                                    </Button>
-                                </div>
+                                <img
+                                    src={part.image}
+                                    alt={part.name}
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "contain",
+                                    }}
+                                />
                             </Rnd>
+
                         ))}
                     </DropZone>
                 </Grid>
