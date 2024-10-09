@@ -88,8 +88,6 @@ function DropZone({ onDrop, children }) {
 export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
     const [selectedPartIndex, setSelectedPartIndex] = useState(null); // For selected part
-    const [undoStack, setUndoStack] = useState([]); // To store history for undo
-    const [redoStack, setRedoStack] = useState([]); // To store history for redo
     const handleDrop = (part) => {
         setPlacedParts((prevParts) => [
             ...prevParts,
@@ -119,23 +117,7 @@ export default function SketchingBoard() {
         setPlacedParts([]);
         setSelectedPartIndex(null); // Clear selection
     };
-    const handleUndo = () => {
-        if (undoStack.length > 0) {
-            const previousState = undoStack[undoStack.length - 1];
-            setRedoStack([...redoStack, placedParts]); // Push current state to redo stack
-            setPlacedParts(previousState); // Restore previous state
-            setUndoStack(undoStack.slice(0, undoStack.length - 1)); // Remove the last action from undo stack
-        }
-    };
 
-    const handleRedo = () => {
-        if (redoStack.length > 0) {
-            const nextState = redoStack[redoStack.length - 1];
-            setUndoStack([...undoStack, placedParts]); // Push current state to undo stack
-            setPlacedParts(nextState); // Restore next state
-            setRedoStack(redoStack.slice(0, redoStack.length - 1)); // Remove the last action from redo stack
-        }
-    };
     return (
         <DndProvider backend={HTML5Backend}>
             <Grid container spacing={2}>
@@ -175,27 +157,9 @@ export default function SketchingBoard() {
                                 color="error"
                                 onClick={handleRemovePart}
                             >
-                                delete
+                                Delete
                             </Button>
-                            
                         )}
-                        {/* <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleUndo}
-                            disabled={undoStack.length === 0}
-                        >
-                            Undo
-                        </Button>
-
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleRedo}
-                            disabled={redoStack.length === 0}
-                        >
-                            Redo
-                        </Button> */}
                     </Box>
 
                     <DropZone onDrop={handleDrop}>
@@ -223,36 +187,43 @@ export default function SketchingBoard() {
                                     });
                                 }}
                                 onClick={() => setSelectedPartIndex(index)} // Set selected part on click
-                                resizeHandleStyles={{
-                                    topLeft: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "nw-resize",
-                                    },
-                                    topRight: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "ne-resize",
-                                    },
-                                    bottomLeft: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "sw-resize",
-                                    },
-                                    bottomRight: {
-                                        width: "12px",
-                                        height: "12px",
-                                        backgroundColor: "black",
-                                        border: "2px solid white",
-                                        cursor: "se-resize",
-                                    },
+                                style={{
+                                    border: selectedPartIndex === index ? "2px solid blue" : "none", // Highlight selected part
                                 }}
+                                resizeHandleStyles={
+                                    selectedPartIndex === index
+                                        ? {
+                                              topLeft: {
+                                                  width: "12px",
+                                                  height: "12px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "nw-resize",
+                                              },
+                                              topRight: {
+                                                  width: "12px",
+                                                  height: "12px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "ne-resize",
+                                              },
+                                              bottomLeft: {
+                                                  width: "12px",
+                                                  height: "12px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "sw-resize",
+                                              },
+                                              bottomRight: {
+                                                  width: "12px",
+                                                  height: "12px",
+                                                  backgroundColor: "black",
+                                                  border: "2px solid white",
+                                                  cursor: "se-resize",
+                                              },
+                                          }
+                                        : {}
+                                } // Only show resize handles on the selected part
                             >
                                 <img
                                     src={part.image}
