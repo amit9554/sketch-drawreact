@@ -8,20 +8,49 @@ import { Rnd } from "react-rnd";
 const ItemTypes = {
   BODY_PART: "body_part",
 };
+
+
 const bodyParts1 = {
-    eyes: [
-        { id: 1, name: "Eye 1", image: require("./assets/images/eyes/01.png") },
-        { id: 2, name: "Eye 2", image: require("./assets/images/eyes/02.png") },
-        { id: 3, name: "Eye 3", image: require("./assets/images/eyes/03.png") },
-        { id: 4, name: "Eye 4", image: require("./assets/images/eyes/04.png") },
-    ],
-    nose: [
-        { id: 5, name: "Nose 1", image: require("./assets/images/nose/01.png") },
-        { id: 6, name: "Nose 2", image: require("./assets/images/nose/02.png") },
-        { id: 7, name: "Nose 3", image: require("./assets/images/nose/03.png") },
-        { id: 8, name: "Nose 4", image: require("./assets/images/nose/04.png") },
-    ],
+    head: Array.from({ length: 20 }, (_, index) => ({
+        id: index + 1,
+        image: require(`./assets/images/head/${String(index + 1).padStart(2, '0')}.png`),
+    })),
+    hair: Array.from({ length: 24 }, (_, index) => ({
+        id: index + 21,
+        image: require(`./assets/images/hair/${String(index + 1).padStart(2, '0')}.png`),
+    })),
+    nose: Array.from({ length: 24 }, (_, index) => ({
+        id: index + 45,
+        image: require(`./assets/images/nose/${String(index + 1).padStart(2, '0')}.png`),
+    })),
+    eyes: Array.from({ length: 24 }, (_, index) => ({
+        id: index + 69,
+        image: require(`./assets/images/eyes/${String(index + 1).padStart(2, '0')}.png`),
+    })),
+    eyebrows: Array.from({ length: 24 }, (_, index) => ({
+        id: index + 93,
+        image: require(`./assets/images/eyebrows/${String(index + 1).padStart(2, '0')}.png`),
+    })),
+    lips: Array.from({ length: 24 }, (_, index) => ({
+        id: index + 117,
+        image: require(`./assets/images/lips/${String(index + 1).padStart(2, '0')}.png`),
+    })),
+    ear: Array.from({ length: 8 }, (_, index) => ({
+        id: index + 141,
+        image: require(`./assets/images/ear/${String(index + 1).padStart(2, '0')}.png`),
+    })),
+    neck: Array.from({ length: 4 }, (_, index) => ({
+        id: index + 153,
+        image: require(`./assets/images/neck/${String(index + 1).padStart(2, '0')}.png`),
+    })),
+    mustach: Array.from({ length: 24 }, (_, index) => ({
+        id: index + 157,
+        image: require(`./assets/images/mustach/${String(index + 1).padStart(2, '0')}.png`),
+    })),
 };
+
+
+
 
 // Draggable component for body parts
 function DraggablePart({ part }) {
