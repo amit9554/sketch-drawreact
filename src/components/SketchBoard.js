@@ -176,39 +176,66 @@ export default function SketchingBoard() {
         const imageURL = canvas.toDataURL(); // Get the image URL from the canvas
         setStepImages((prevImages) => [...prevImages, imageURL]); // Add to step images
     };
+
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (selectedPartIndex !== null) {
                 const newParts = [...placedParts];
-                const moveAmount = 5;
-
-                switch (e.key) {
-                    case "ArrowUp":
-                        newParts[selectedPartIndex].y -= moveAmount;
-                        break;
-                    case "ArrowDown":
-                        newParts[selectedPartIndex].y += moveAmount;
-                        break;
-                    case "ArrowLeft":
-                        newParts[selectedPartIndex].x -= moveAmount;
-                        break;
-                    case "ArrowRight":
-                        newParts[selectedPartIndex].x += moveAmount;
-                        break;
-                    default:
-                        return;
+                const selectedPart = newParts[selectedPartIndex];
+                const moveAmount = 5; // Amount to move the image by
+                const resizeAmount = 10; // Amount to resize by
+    
+                if (e.ctrlKey) {
+                    switch (e.key) {
+                        case "+":
+                            // Increase size
+                            selectedPart.width += resizeAmount;
+                            selectedPart.height += resizeAmount;
+                            break;
+                        case "-":
+                            // Decrease size, ensure it doesn't go below a minimum size
+                            if (selectedPart.width > resizeAmount && selectedPart.height > resizeAmount) {
+                                selectedPart.width -= resizeAmount;
+                                selectedPart.height -= resizeAmount;
+                            }
+                            break;
+                        default:
+                            return;
+                    }
+                    setPlacedParts(newParts);
+                    e.preventDefault(); // Prevent default Ctrl + / Ctrl - behavior
+                } else {
+                    // Move with arrow keys
+                    switch (e.key) {
+                        case "ArrowUp":
+                            selectedPart.y -= moveAmount;
+                            break;
+                        case "ArrowDown":
+                            selectedPart.y += moveAmount;
+                            break;
+                        case "ArrowLeft":
+                            selectedPart.x -= moveAmount;
+                            break;
+                        case "ArrowRight":
+                            selectedPart.x += moveAmount;
+                            break;
+                        default:
+                            return;
+                    }
+    
+                    setPlacedParts(newParts);
+                    e.preventDefault(); // Prevent default arrow key scrolling behavior
                 }
-
-                setPlacedParts(newParts);
-                e.preventDefault();
             }
         };
-
+    
         window.addEventListener("keydown", handleKeyDown);
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
     }, [selectedPartIndex, placedParts]);
+    
 
     return (
         <DndProvider backend={HTML5Backend}>
