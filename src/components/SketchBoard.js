@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Grid, Box, Paper, Typography, Button } from "@mui/material";
@@ -88,20 +88,22 @@ function DropZone({ onDrop, children, onClick }) {
 // Main SketchingBoard Component
 export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
-    const [selectedPartIndex, setSelectedPartIndex] = useState(null); // For selected part
+    const [selectedPartIndex, setSelectedPartIndex] = useState(null);
+    const [stepImages, setStepImages] = useState([]); // Store exported images for steps
+    const canvasRef = useRef(null); // Ref for the canvas
 
     const handleDrop = (part, monitor) => {
+        exportImage();
         const dropZone = document.getElementById("drop-zone");
-        const dropZoneRect = dropZone.getBoundingClientRect(); // Get DropZone dimensions
-        const clientOffset = monitor.getClientOffset(); // Get mouse position on drop
+        const dropZoneRect = dropZone.getBoundingClientRect();
+        const clientOffset = monitor.getClientOffset();
 
-        // Calculate relative position within the DropZone
         const x = clientOffset.x - dropZoneRect.left;
         const y = clientOffset.y - dropZoneRect.top;
 
         setPlacedParts((prevParts) => [
             ...prevParts,
-            { ...part, width: 80, height: 80, x, y, locked: false }, // Set x, y and initial locked state
+            { ...part, width: 80, height: 80, x, y, locked: false },
         ]);
     };
 
@@ -114,26 +116,42 @@ export default function SketchingBoard() {
         setPlacedParts(newParts);
     };
 
+    const drawFinalProduct = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+        placedParts.forEach((part) => {
+            const img = new Image();
+            img.src = part.image; // Set image source
+            img.onload = () => {
+                ctx.drawImage(img, part.x, part.y, part.width, part.height);
+            };
+        });
+    };
+
+    useEffect(() => {
+        drawFinalProduct(); // Draw whenever placedParts change
+    }, [placedParts]);
+
     const handleRemovePart = () => {
         if (selectedPartIndex !== null) {
             setPlacedParts((prevParts) =>
                 prevParts.filter((_, i) => i !== selectedPartIndex)
             );
-            setSelectedPartIndex(null); // Clear selection
+            setSelectedPartIndex(null);
         }
     };
 
     const handleRemoveAll = () => {
         setPlacedParts([]);
-        setSelectedPartIndex(null); // Clear selection
+        setSelectedPartIndex(null);
     };
 
-    // Handle clicking outside an image (DropZone click)
     const handleClickOutside = () => {
-        setSelectedPartIndex(null); // Deselect any selected part
+        setSelectedPartIndex(null);
     };
 
-    // Toggle lock state
     const handleLockToggle = () => {
         if (selectedPartIndex !== null) {
             const newParts = [...placedParts];
@@ -142,68 +160,22 @@ export default function SketchingBoard() {
         }
     };
 
-    // Jump to a specific placed part
     const handleJumpToPart = (index) => {
         setSelectedPartIndex(index);
     };
 
-    // Keyboard arrow key handling
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (selectedPartIndex !== null) {
-                const newParts = [...placedParts];
-                const moveAmount = 5; // Amount to move per key press
-                const resizeAmount = 5; // Amount to resize per key press
-
-                switch (e.key) {
-                    case "ArrowUp":
-                        newParts[selectedPartIndex].y -= moveAmount;
-                        break;
-                    case "ArrowDown":
-                        newParts[selectedPartIndex].y += moveAmount;
-                        break;
-                    case "ArrowLeft":
-                        newParts[selectedPartIndex].x -= moveAmount;
-                        break;
-                    case "ArrowRight":
-                        newParts[selectedPartIndex].x += moveAmount;
-                        break;
-                    case "+":
-                    case "=":
-                        if (e.ctrlKey) {
-                            newParts[selectedPartIndex].width += resizeAmount;
-                            newParts[selectedPartIndex].height += resizeAmount;
-                        }
-                        break;
-                    case "-":
-                        if (e.ctrlKey) {
-                            newParts[selectedPartIndex].width -= resizeAmount;
-                            newParts[selectedPartIndex].height -= resizeAmount;
-                        }
-                        break;
-                    default:
-                        return; // Exit if it's not an arrow key
-                }
-
-                setPlacedParts(newParts);
-                e.preventDefault(); // Prevent scrolling when arrow keys are pressed
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-
-        // Cleanup the event listener on component unmount
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [selectedPartIndex, placedParts]);
-
+    // Export final sketch
+    const exportImage = () => {
+        const canvas = canvasRef.current;
+        const imageURL = canvas.toDataURL(); // Get the image URL from the canvas
+        setStepImages((prevImages) => [...prevImages, imageURL]); // Add to step images
+    };
 
     return (
         <DndProvider backend={HTML5Backend}>
             <Grid container spacing={2}>
                 {/* Left Panel: Body Parts */}
-                <Grid item xs={2}>
+                <Grid item xs={1}>
                     <Typography variant="h5" gutterBottom>
                         Body Parts
                     </Typography>
@@ -251,6 +223,7 @@ export default function SketchingBoard() {
                                 </Button>
                             </>
                         )}
+
                     </Box>
 
                     <DropZone onDrop={handleDrop} onClick={handleClickOutside}>
@@ -276,13 +249,13 @@ export default function SketchingBoard() {
                                     }
                                 }}
                                 onClick={(e) => {
-                                    e.stopPropagation(); // Prevent click event from propagating to DropZone
-                                    setSelectedPartIndex(index); // Set selected part on click
+                                    e.stopPropagation();
+                                    setSelectedPartIndex(index);
                                 }}
                                 style={{
-                                    border: selectedPartIndex === index ? "2px solid blue" : "none", // Highlight selected part
+                                    border: selectedPartIndex === index ? "2px solid blue" : "none",
                                 }}
-                                disableDragging={part.locked} // Disable dragging if locked
+                                disableDragging={part.locked}
                             >
                                 <img
                                     src={part.image}
@@ -295,32 +268,78 @@ export default function SketchingBoard() {
                                 />
                             </Rnd>
                         ))}
-                    </DropZone>                    
+                    </DropZone>
+                    {/* Canvas for final sketch */}
+                    <canvas
+                        ref={canvasRef}
+                        width={800} // Set appropriate width
+                        height={700} // Set appropriate height
+                        style={{ border: "1px solid black", display: "none" }} // Hide canvas
+                    />
                 </Grid>
                 <Grid item xs={1}>
-                  <Typography variant="h6">Steps</Typography>
-                        <Box>
-                            {placedParts.map((part, index) => (
-                                <Button
-                                    key={index}
-                                    variant="outlined"
-                                    onClick={() => handleJumpToPart(index)}
-                                    sx={{
-                                        display: "block",
-                                        margin: "5px 0",
+                    <Typography variant="h6">Steps</Typography>
+                    <Box>
+                        {stepImages.map((imageSrc, index) => (
+                            <Button
+                                key={index}
+                                variant="outlined"
+                                sx={{
+                                    display: "block",
+                                    margin: "5px 0",
+                                    width: "100%",
+                                    textAlign: "left",
+                                    backgroundColor:   index ? "lightblue" : "white",
+                                    "&:hover": {
+                                        backgroundColor:  index ? "lightblue" : "#f0f0f0",
+                                    },
+                                }}
+                            >
+                                <img
+                                    src={imageSrc}
+                                    alt={`Step ${index + 1}`}
+                                    style={{
                                         width: "100%",
-                                        textAlign: "left",
-                                        backgroundColor: selectedPartIndex === index ? "lightblue" : "white",
-                                        "&:hover": {
-                                            backgroundColor: selectedPartIndex === index ? "lightblue" : "#f0f0f0", // Change background color on hover
-                                        },
+                                        height: "100%",
+                                        objectFit: "contain",
                                     }}
-                                >
-                                    {part.name}
-                                </Button>
-                            ))}
-                        </Box>
-                </Grid>                     
+                                />
+                            </Button>
+                        ))}
+                    </Box>
+                </Grid>
+                <Grid item xs={1}>
+                    <Typography variant="h6">Parts</Typography>
+                    <Box>
+                        {placedParts.map((part, index) => (
+                            <Button
+                                key={index}
+                                variant="outlined"
+                                onClick={() => handleJumpToPart(index)}
+                                sx={{
+                                    display: "block",
+                                    margin: "5px 0",
+                                    width: "100%",
+                                    textAlign: "left",
+                                    backgroundColor: selectedPartIndex === index ? "lightblue" : "white",
+                                    "&:hover": {
+                                        backgroundColor: selectedPartIndex === index ? "lightblue" : "#f0f0f0",
+                                    },
+                                }}
+                            >
+                                <img
+                                    src={part.image}
+                                    alt={part.name}
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "contain",
+                                    }}
+                                />
+                            </Button>
+                        ))}
+                    </Box>
+                </Grid>
             </Grid>
         </DndProvider>
     );
