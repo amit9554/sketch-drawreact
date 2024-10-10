@@ -95,8 +95,8 @@ export default function SketchingBoard() {
   const [selectedPartIndex, setSelectedPartIndex] = useState(null);
   const [selectedStepIndex, setSelectedStepIndex] = useState(null);
   const [displayedBodyParts, setDisplayedBodyParts] = useState([]);
-  const [stepImages, setStepImages] = useState([]); // Store exported images for steps
-  const canvasRef = useRef(null); // Ref for the canvas
+  const [stepImages, setStepImages] = useState([]); 
+  const canvasRef = useRef(null);
 
   const handleDrop = (part, monitor) => {
     exportImage();
@@ -125,11 +125,11 @@ export default function SketchingBoard() {
   const drawFinalProduct = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height); 
 
     placedParts.forEach((part) => {
       const img = new Image();
-      img.src = part.image; // Set image source
+      img.src = part.image; 
       img.onload = () => {
         ctx.drawImage(img, part.x, part.y, part.width, part.height);
       };
@@ -137,7 +137,7 @@ export default function SketchingBoard() {
   };
 
   useEffect(() => {
-    drawFinalProduct(); // Draw whenever placedParts change
+    drawFinalProduct(); 
   }, [placedParts]);
 
   const handleRemovePart = () => {
@@ -172,14 +172,27 @@ export default function SketchingBoard() {
   const handleJumpToPart = (index) => {
     setSelectedPartIndex(index);
   };
-  const handleJumpToStep = (index) => {
-    setSelectedStepIndex(index);
+  const handleJumpToStep = (index, imageSrc) => {
+    setSelectedStepIndex(index); 
+    const canvas = canvasRef.current;
+    const newPart = {
+        id: `step_${index}`, 
+        name: `Step ${index + 1}`, 
+        image: imageSrc, 
+        width: canvas.width, 
+        height: canvas.height, 
+        x: 0, 
+        y: 0, 
+        locked: false,
+      };
+  
+      setPlacedParts([newPart]);
+      setStepImages((prevImages) => prevImages.slice(0, index + 1));
   };
-  // Export final sketch
   const exportImage = () => {
     const canvas = canvasRef.current;
-    const imageURL = canvas.toDataURL(); // Get the image URL from the canvas
-    setStepImages((prevImages) => [...prevImages, imageURL]); // Add to step images
+    const imageURL = canvas.toDataURL(); 
+    setStepImages((prevImages) => [...prevImages, imageURL]); 
   };
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -221,7 +234,6 @@ export default function SketchingBoard() {
   return (
     <DndProvider backend={HTML5Backend}>
       <Grid container spacing={2}>
-        {/* Left Panel: Body Parts */}
         <Grid item xs={1}>
           <Typography variant="h6" marginBottom={8}>
              Parts Name
@@ -264,14 +276,10 @@ export default function SketchingBoard() {
             ))}
           </Grid>
         </Grid>
-
-        {/* Right Panel: Sketch Board and Steps */}
         <Grid item xs={8}>
           <Typography variant="h5" gutterBottom>
             Sketching Board
           </Typography>
-
-          {/* Control Buttons */}
           <Box sx={{ display: "flex", gap: 2, marginBottom: 2,
           maxHeight: 750,
            }}>
@@ -352,11 +360,10 @@ export default function SketchingBoard() {
               </Rnd>
             ))}
           </DropZone>
-          {/* Canvas for final sketch */}
           <canvas
             ref={canvasRef}
-            width={800} // Set appropriate width
-            height={700} // Set appropriate height
+            width={1270} 
+            height={700} 
             style={{ border: "1px solid black", display: "none" }} // Hide canvas
           />
         </Grid>
@@ -378,7 +385,7 @@ export default function SketchingBoard() {
               <Button
                 key={index}
                 variant="outlined"
-                onClick={() => handleJumpToStep(index)}
+                onClick={() => handleJumpToStep(index, imageSrc)}
                 sx={{
                   display: "block",
                   margin: "5px 0",
