@@ -89,6 +89,7 @@ function DropZone({ onDrop, children, onClick }) {
 export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
     const [selectedPartIndex, setSelectedPartIndex] = useState(null);
+    const [selectedStepIndex, setSelectedStepIndex] = useState(null);
     const [stepImages, setStepImages] = useState([]); // Store exported images for steps
     const canvasRef = useRef(null); // Ref for the canvas
 
@@ -140,16 +141,19 @@ export default function SketchingBoard() {
                 prevParts.filter((_, i) => i !== selectedPartIndex)
             );
             setSelectedPartIndex(null);
+            setSelectedStepIndex(null);
         }
     };
 
     const handleRemoveAll = () => {
         setPlacedParts([]);
         setSelectedPartIndex(null);
+        setSelectedStepIndex(null);
     };
 
     const handleClickOutside = () => {
         setSelectedPartIndex(null);
+        setSelectedStepIndex(null);
     };
 
     const handleLockToggle = () => {
@@ -163,7 +167,9 @@ export default function SketchingBoard() {
     const handleJumpToPart = (index) => {
         setSelectedPartIndex(index);
     };
-
+    const handleJumpToStep = (index) => {
+        setSelectedStepIndex(index);
+    };
     // Export final sketch
     const exportImage = () => {
         const canvas = canvasRef.current;
@@ -317,14 +323,15 @@ export default function SketchingBoard() {
                             <Button
                                 key={index}
                                 variant="outlined"
+                                onClick={() => handleJumpToStep(index)}
                                 sx={{
                                     display: "block",
                                     margin: "5px 0",
                                     width: "100%",
                                     textAlign: "left",
-                                    backgroundColor: index ? "lightblue" : "white",
+                                    backgroundColor: selectedStepIndex === index ? "lightblue" : "white",
                                     "&:hover": {
-                                        backgroundColor: index ? "lightblue" : "#f0f0f0",
+                                        backgroundColor: selectedStepIndex === index ? "lightblue" : "#f0f0f0",
                                     },
                                 }}
                             >
