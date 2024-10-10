@@ -334,7 +334,7 @@ export default function SketchingBoard() {
           />
         </Grid>
         <Grid item xs={1}>
-          <Typography variant="h5" marginBottom={8}>
+          <Typography variant="h6" marginBottom={8}>
             Steps
           </Typography>
           <Box
@@ -379,7 +379,7 @@ export default function SketchingBoard() {
           </Box>
         </Grid>
         <Grid item xs={1}>
-          <Typography variant="h5" marginBottom={8}>
+          <Typography variant="h6" marginBottom={8}>
             Parts
           </Typography>
           <Box
