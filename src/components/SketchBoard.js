@@ -170,6 +170,39 @@ export default function SketchingBoard() {
         const imageURL = canvas.toDataURL(); // Get the image URL from the canvas
         setStepImages((prevImages) => [...prevImages, imageURL]); // Add to step images
     };
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (selectedPartIndex !== null) {
+                const newParts = [...placedParts];
+                const moveAmount = 5;
+
+                switch (e.key) {
+                    case "ArrowUp":
+                        newParts[selectedPartIndex].y -= moveAmount;
+                        break;
+                    case "ArrowDown":
+                        newParts[selectedPartIndex].y += moveAmount;
+                        break;
+                    case "ArrowLeft":
+                        newParts[selectedPartIndex].x -= moveAmount;
+                        break;
+                    case "ArrowRight":
+                        newParts[selectedPartIndex].x += moveAmount;
+                        break;
+                    default:
+                        return;
+                }
+
+                setPlacedParts(newParts);
+                e.preventDefault();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [selectedPartIndex, placedParts]);
 
     return (
         <DndProvider backend={HTML5Backend}>
@@ -289,9 +322,9 @@ export default function SketchingBoard() {
                                     margin: "5px 0",
                                     width: "100%",
                                     textAlign: "left",
-                                    backgroundColor:   index ? "lightblue" : "white",
+                                    backgroundColor: index ? "lightblue" : "white",
                                     "&:hover": {
-                                        backgroundColor:  index ? "lightblue" : "#f0f0f0",
+                                        backgroundColor: index ? "lightblue" : "#f0f0f0",
                                     },
                                 }}
                             >
