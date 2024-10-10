@@ -8,16 +8,20 @@ import { Rnd } from "react-rnd";
 const ItemTypes = {
   BODY_PART: "body_part",
 };
-
-// PNG images for body parts
-const bodyParts = [
-  { id: 1, name: "Eye", image: require("./assets/images/eyes/01.png") },
-  { id: 2, name: "Eyebrow", image: require("./assets/images/eyebrows/01.png") },
-  { id: 3, name: "Hair", image: require("./assets/images/hair/01.png") },
-  { id: 4, name: "Head", image: require("./assets/images/head/01.png") },
-  { id: 5, name: "Lips", image: require("./assets/images/lips/01.png") },
-  { id: 6, name: "Nose", image: require("./assets/images/nose/01.png") },
-];
+const bodyParts1 = {
+    eyes: [
+        { id: 1, name: "Eye 1", image: require("./assets/images/eyes/01.png") },
+        { id: 2, name: "Eye 2", image: require("./assets/images/eyes/02.png") },
+        { id: 3, name: "Eye 3", image: require("./assets/images/eyes/03.png") },
+        { id: 4, name: "Eye 4", image: require("./assets/images/eyes/04.png") },
+    ],
+    nose: [
+        { id: 5, name: "Nose 1", image: require("./assets/images/nose/01.png") },
+        { id: 6, name: "Nose 2", image: require("./assets/images/nose/02.png") },
+        { id: 7, name: "Nose 3", image: require("./assets/images/nose/03.png") },
+        { id: 8, name: "Nose 4", image: require("./assets/images/nose/04.png") },
+    ],
+};
 
 // Draggable component for body parts
 function DraggablePart({ part }) {
@@ -90,6 +94,7 @@ export default function SketchingBoard() {
   const [placedParts, setPlacedParts] = useState([]);
   const [selectedPartIndex, setSelectedPartIndex] = useState(null);
   const [selectedStepIndex, setSelectedStepIndex] = useState(null);
+  const [displayedBodyParts, setDisplayedBodyParts] = useState([]);
   const [stepImages, setStepImages] = useState([]); // Store exported images for steps
   const canvasRef = useRef(null); // Ref for the canvas
 
@@ -209,11 +214,33 @@ export default function SketchingBoard() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [selectedPartIndex, placedParts]);
-
+  const handleShowBodyParts = (key) => {
+    setDisplayedBodyParts(bodyParts1[key]);
+   
+  };
   return (
     <DndProvider backend={HTML5Backend}>
       <Grid container spacing={2}>
         {/* Left Panel: Body Parts */}
+        <Grid item xs={1}>
+          <Typography variant="h6" marginBottom={8}>
+             Parts Name
+          </Typography>
+          
+          {Object.keys(bodyParts1).map((key) => (
+            <Grid
+              container
+              spacing={2}
+              key={key}
+              sx={{ maxHeight: 750, overflowY: "auto" }}
+              margin={1}
+            >
+               <Button variant="contained" color="primary" onClick={() => handleShowBodyParts(key)} >
+                {key.charAt(0).toUpperCase() + key.slice(1)} {/* Capitalize first letter */}
+              </Button>
+            </Grid>
+          ))}
+        </Grid>
         <Grid item xs={1}>
           <Typography variant="h6" marginBottom={8}>
             Body Parts
@@ -230,8 +257,8 @@ export default function SketchingBoard() {
               scrollbarWidth: "none",
             }}
           >
-            {bodyParts.map((part) => (
-              <Grid item xs={12} key={part.id}>
+            {displayedBodyParts.map((part) => (
+              <Grid item key={part.id} xs={12}>
                 <DraggablePart part={part} />
               </Grid>
             ))}
@@ -239,7 +266,7 @@ export default function SketchingBoard() {
         </Grid>
 
         {/* Right Panel: Sketch Board and Steps */}
-        <Grid item xs={9}>
+        <Grid item xs={8}>
           <Typography variant="h5" gutterBottom>
             Sketching Board
           </Typography>
