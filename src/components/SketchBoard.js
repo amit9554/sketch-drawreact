@@ -191,7 +191,7 @@ export default function SketchingBoard() {
         setIsPencilActive(false);
     };
 
-    const handleEraserWidthChange = (event, newValue) => {
+    const handleEraserWidthChange = (_event, newValue) => {
         setEraserWidth(newValue);
     };
 
@@ -299,16 +299,14 @@ export default function SketchingBoard() {
         }
     };
 
-    const handlePencilWidthChange = (event, newValue) => {
+    const handlePencilWidthChange = (_event, newValue) => {
         setPencilWidth(newValue);
         const ctx = drawingCanvasRef.current.getContext("2d");
         ctx.lineWidth = newValue;
     };
 
 
-    const handlePencilToggle = () => {
-        setIsPencilActive(!isPencilActive);
-    };
+
 
     const handleColorChange = (event) => {
         setPencilColor(event.target.value);
@@ -699,12 +697,12 @@ export default function SketchingBoard() {
                                     bounds="parent"
                                     size={{ width: part.width, height: part.height }}
                                     position={{ x: part.x, y: part.y }}
-                                    onDragStop={(e, d) => {
+                                    onDragStop={(_e, d) => {
                                         if (!part.locked) {
                                             handleResizeOrDrag(index, { x: d.x, y: d.y });
                                         }
                                     }}
-                                    onResizeStop={(e, direction, ref, delta, position) => {
+                                    onResizeStop={(_e, _direction, ref, _delta, position) => {
                                         if (!part.locked) {
                                             handleResizeOrDrag(index, {
                                                 width: ref.offsetWidth,
