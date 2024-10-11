@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Grid, Box, Paper, Typography, Button, Tooltip, IconButton, Slider } from "@mui/material";
+import { Grid, Box, Paper, Typography, Button, Tooltip, IconButton, Slider, AppBar, Toolbar } from "@mui/material";
 import { Rnd } from "react-rnd";
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockIcon from '@mui/icons-material/Lock';
@@ -133,7 +133,7 @@ function DropZone({ onDrop, children, onClick }) {
             id="drop-zone"
             sx={{
                 width: "100%",
-                height: 700,
+                height: 600,
                 border: "2px dashed gray",
                 backgroundColor: isOver ? "lightyellow" : "white",
                 display: "flex",
@@ -153,6 +153,8 @@ export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
     const [selectedPartIndex, setSelectedPartIndex] = useState(null);
     const [selectedkey, setSelectedKey] = useState(null);
+    const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+    const boxRef = useRef(null);
 
     const [selectedStepIndex, setSelectedStepIndex] = useState(null);
     const [displayedBodyParts, setDisplayedBodyParts] = useState([]);
@@ -171,18 +173,37 @@ export default function SketchingBoard() {
     const [isErasing, setIsErasing] = useState(false);
     const [eraserWidth, setEraserWidth] = useState(10);
 
+
+    const [selectedTool, setSelectedTool] = useState(null);
+
+
+
+    useEffect(() => {
+        const updateCanvasSize = () => {
+            if (boxRef.current) {
+                const { width, height } = boxRef.current.getBoundingClientRect();
+                setCanvasSize({ width, height });
+            }
+        };
+
+        updateCanvasSize();
+        window.addEventListener('resize', updateCanvasSize);
+
+        return () => window.removeEventListener('resize', updateCanvasSize);
+    }, []);
+
     const handleDrop = (part, monitor) => {
         exportImage();
         const dropZone = document.getElementById("drop-zone");
         const dropZoneRect = dropZone.getBoundingClientRect();
         const clientOffset = monitor.getClientOffset();
 
-        const x = clientOffset.x - dropZoneRect.left;
-        const y = clientOffset.y - dropZoneRect.top;
+        const x = Math.min(Math.max(clientOffset.x - dropZoneRect.left, 0), canvasSize.width - 70);
+        const y = Math.min(Math.max(clientOffset.y - dropZoneRect.top, 0), canvasSize.height - 70);
 
         setPlacedParts((prevParts) => [
             ...prevParts,
-            { ...part, width: 80, height: 80, x, y, locked: false },
+            { ...part, width: 70, height: 70, x, y, locked: false },
         ]);
     };
 
@@ -223,14 +244,18 @@ export default function SketchingBoard() {
 
     const draw = ({ nativeEvent }) => {
         if (!isDrawing) return;
+        const ctx = drawingCanvasRef.current.getContext("2d");
+        const { offsetX, offsetY } = nativeEvent;
+
         if (isPencilActive) {
-            const { offsetX, offsetY } = nativeEvent;
-            const ctx = drawingCanvasRef.current.getContext("2d");
             ctx.globalCompositeOperation = 'source-over';
             ctx.lineTo(offsetX, offsetY);
             ctx.stroke();
         } else if (isErasing) {
-            erase({ nativeEvent });
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(offsetX, offsetY, eraserWidth / 2, 0, Math.PI * 2, false);
+            ctx.fill();
         }
     };
 
@@ -341,10 +366,19 @@ export default function SketchingBoard() {
 
     const handleResizeOrDrag = (index, newPosition) => {
         const newParts = [...placedParts];
+        const part = newParts[index];
+
+        const x = Math.min(Math.max(newPosition.x, 0), canvasSize.width - part.width);
+        const y = Math.min(Math.max(newPosition.y, 0), canvasSize.height - part.height);
+
         newParts[index] = {
-            ...newParts[index],
-            ...newPosition,
+            ...part,
+            x,
+            y,
+            width: Math.min(newPosition.width, canvasSize.width - x),
+            height: Math.min(newPosition.height, canvasSize.height - y),
         };
+
         setPlacedParts(newParts);
     };
 
@@ -502,17 +536,13 @@ export default function SketchingBoard() {
     return (
         <DndProvider backend={HTML5Backend}>
             <Grid container spacing={2}>
-                <Grid item xs={1}>
-                    {/* <Typography variant="h6" marginBottom={8}>
-                        Parts Name
-                    </Typography> */}
-
+                <Grid item sx={{ padding: '10px' }}>
                     {Object.keys(bodyParts1).map((key) => (
                         <Grid
                             container
                             spacing={2}
                             key={key}
-                            sx={{ maxHeight: 750, overflowY: 'auto' }}
+                            sx={{ maxHeight: 650, overflowY: 'auto' }}
                             margin={1}
                         >
                             <Tooltip title={key.charAt(0).toUpperCase() + key.slice(1)} arrow placement="right">
@@ -520,7 +550,7 @@ export default function SketchingBoard() {
                                     variant="contained"
                                     // color="primary"
                                     onClick={() => handleShowBodyParts(key)}
-                                    sx={{ padding: 1 }}
+                                    // sx={{ padding: 1 }}
                                     style={{
                                         backgroundColor:
                                             selectedkey === key ? "#c9c9c9" : "#b7f6f7",
@@ -530,7 +560,7 @@ export default function SketchingBoard() {
                                     <img
                                         src={partIcons[key]}
                                         alt={`${key} icon`}
-                                        style={{ width: '30px', height: '30px' }} // Adjust the size as needed
+                                        style={{ width: '30px', height: '35px' }}
                                     />
                                 </Button>
                             </Tooltip>
@@ -543,9 +573,9 @@ export default function SketchingBoard() {
                     </Typography> */}
                     <Grid
                         container
-                        spacing={3}
+                        spacing={2}
                         sx={{
-                            maxHeight: 750,
+                            maxHeight: 650,
                             overflowY: "auto",
                             "&::-webkit-scrollbar": {
                                 width: 0,
@@ -564,132 +594,186 @@ export default function SketchingBoard() {
                     {/* <Typography variant="h5" gutterBottom>
                         Sketching Board
                     </Typography> */}
-                    <Box sx={{
-                        display: "flex",
-                        gap: 2,
-                        marginBottom: 2,
-                        maxHeight: 750,
-                        alignItems: "center"
-                    }}>
-                        <Tooltip title="Clear All">
-                            <IconButton
-                                color="secondary"
-                                onClick={handleRemoveAll}
-                            >
-                                <CancelIcon />
-                            </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Undo">
-                            <IconButton
-                                onClick={undo}
-                                disabled={historyIndex <= 0}
-                            >
-                                <UndoIcon />
-                            </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Redo">
-                            <IconButton
-                                onClick={redo}
-                                disabled={historyIndex >= history.length - 1}
-                            >
-                                <RedoIcon />
-                            </IconButton>
-                        </Tooltip>
-
-                        {selectedPartIndex !== null && (
-                            <>
-                                <Tooltip title={placedParts[selectedPartIndex]?.locked ? "Unlock" : "Lock"}>
+                    <>
+                        <AppBar position="static" sx={{ backgroundColor: "#c9c9c9" }} >
+                            <Toolbar sx={{ display: "flex", gap: 2 }}>
+                                <Tooltip title="Clear All">
                                     <IconButton
-                                        color={placedParts[selectedPartIndex]?.locked ? "primary" : "default"}
-                                        onClick={handleLockToggle}
+                                        color={selectedTool === "clear" ? "success" : "inherit"}
+                                        onClick={() => {
+                                            setSelectedTool("clear");
+                                            handleRemoveAll();
+                                        }}
+                                        sx={{
+                                            backgroundColor: selectedTool === "clear" ? "#0843a1" : "inherit",
+                                            color: selectedTool === "clear" ? "white" : "inherit", // Change icon color to white when selected
+                                        }}
                                     >
-                                        {placedParts[selectedPartIndex]?.locked ? <LockIcon /> : <LockOpenIcon />}
+                                        <CancelIcon sx={{ color: selectedTool === "clear" ? "white" : "inherit" }} />
                                     </IconButton>
                                 </Tooltip>
 
-                                <Tooltip title="Remove">
+                                <Tooltip title="Undo">
                                     <IconButton
-                                        color="error"
-                                        onClick={handleRemovePart}
+                                        color={selectedTool === "undo" ? "success" : "inherit"}
+                                        onClick={() => {
+                                            setSelectedTool("undo");
+                                            undo();
+                                        }}
+                                        disabled={historyIndex <= 0}
+                                        sx={{
+                                            backgroundColor: selectedTool === "undo" ? "#0843a1" : "inherit",
+                                            color: selectedTool === "undo" ? "white" : "inherit", // Change icon color to white when selected
+                                        }}
                                     >
-                                        <DeleteIcon />
+                                        <UndoIcon sx={{ color: selectedTool === "undo" ? "white" : "inherit" }} />
                                     </IconButton>
                                 </Tooltip>
-                            </>
-                        )}
 
-                        <Tooltip title={isPencilActive ? "Deactivate Pencil" : "Activate Pencil"}>
-                            <IconButton
-                                color={isPencilActive ? "primary" : "default"}
-                                onClick={() => {
-                                    setIsPencilActive(!isPencilActive);
-                                    setIsErasing(false);
-                                }}
-                            >
-                                <CreateIcon />
-                            </IconButton>
-                        </Tooltip>
-                        {isPencilActive && (
-                            <>
-                                <Tooltip title="Choose Pencil Color">
-                                    <IconButton>
-                                        <ColorLensIcon />
-                                        <input
-                                            type="color"
-                                            value={pencilColor}
-                                            onChange={handleColorChange}
-                                            style={{ opacity: 0, position: 'absolute', width: '100%', height: '100%' }}
+                                <Tooltip title="Redo">
+                                    <IconButton
+                                        color={selectedTool === "redo" ? "success" : "inherit"}
+                                        onClick={() => {
+                                            setSelectedTool("redo");
+                                            redo();
+                                        }}
+                                        disabled={historyIndex >= history.length - 1}
+                                        sx={{
+                                            backgroundColor: selectedTool === "redo" ? "#0843a1" : "inherit",
+                                            color: selectedTool === "redo" ? "white" : "inherit", // Change icon color to white when selected
+                                        }}
+                                    >
+                                        <RedoIcon sx={{ color: selectedTool === "redo" ? "white" : "inherit" }} />
+                                    </IconButton>
+                                </Tooltip>
+
+                                {selectedPartIndex !== null && (
+                                    <>
+                                        <Tooltip title={placedParts[selectedPartIndex]?.locked ? "Unlock" : "Lock"}>
+                                            <IconButton
+                                                color={selectedTool === "lock" ? "success" : "inherit"}
+                                                onClick={() => {
+                                                    setSelectedTool("lock");
+                                                    handleLockToggle();
+                                                }}
+                                                sx={{
+                                                    backgroundColor: selectedTool === "lock" ? "#0843a1" : "inherit",
+                                                    color: selectedTool === "lock" ? "white" : "inherit", // Change icon color to white when selected
+                                                }}
+                                            >
+                                                {placedParts[selectedPartIndex]?.locked ? (
+                                                    <LockIcon sx={{ color: selectedTool === "lock" ? "white" : "inherit" }} />
+                                                ) : (
+                                                    <LockOpenIcon sx={{ color: selectedTool === "lock" ? "white" : "inherit" }} />
+                                                )}
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        <Tooltip title="Remove">
+                                            <IconButton
+                                                color={selectedTool === "remove" ? "success" : "inherit"}
+                                                onClick={() => {
+                                                    setSelectedTool("remove");
+                                                    handleRemovePart();
+                                                }}
+                                                sx={{
+                                                    backgroundColor: selectedTool === "remove" ? "#0843a1" : "inherit",
+                                                    color: selectedTool === "remove" ? "white" : "inherit", // Change icon color to white when selected
+                                                }}
+                                            >
+                                                <DeleteIcon sx={{ color: selectedTool === "remove" ? "white" : "inherit" }} />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </>
+                                )}
+
+                                <Tooltip title={isPencilActive ? "Deactivate Pencil" : "Activate Pencil"}>
+                                    <IconButton
+                                        color={selectedTool === "pencil" ? "success" : "inherit"}
+                                        onClick={() => {
+                                            setSelectedTool("pencil");
+                                            setIsPencilActive(!isPencilActive);
+                                            setIsErasing(false);
+                                        }}
+                                        sx={{
+                                            backgroundColor: selectedTool === "pencil" ? "#0843a1" : "inherit",
+                                            color: selectedTool === "pencil" ? "white" : "inherit", // Change icon color to white when selected
+                                        }}
+                                    >
+                                        <CreateIcon sx={{ color: selectedTool === "pencil" ? "white" : "inherit" }} />
+                                    </IconButton>
+                                </Tooltip>
+
+                                {isPencilActive && (
+                                    <>
+                                        <Tooltip title="Choose Pencil Color">
+                                            <IconButton color="inherit">
+                                                <ColorLensIcon />
+                                                <input
+                                                    type="color"
+                                                    value={pencilColor}
+                                                    onChange={handleColorChange}
+                                                    style={{ opacity: 0, position: 'absolute', width: '100%', height: '100%' }}
+                                                />
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        <Tooltip title="Adjust Pencil Width">
+                                            <Slider
+                                                value={pencilWidth}
+                                                onChange={handlePencilWidthChange}
+                                                aria-labelledby="pencil-width-slider"
+                                                min={1}
+                                                max={20}
+                                                sx={{ width: 100, color: 'white' }}
+                                            />
+                                        </Tooltip>
+                                    </>
+                                )}
+
+                                <Tooltip title={isErasing ? "Deactivate Eraser" : "Activate Eraser"}>
+                                    <IconButton
+                                        color={selectedTool === "eraser" ? "success" : "inherit"}
+                                        onClick={() => {
+                                            setSelectedTool("eraser");
+                                            handleEraserToggle();
+                                        }}
+                                        sx={{
+                                            backgroundColor: selectedTool === "eraser" ? "#0843a1" : "inherit",
+                                            color: selectedTool === "eraser" ? "white" : "inherit", // Change icon color to white when selected
+                                        }}
+                                    >
+                                        <EraserIcon sx={{ color: selectedTool === "eraser" ? "white" : "inherit" }} />
+                                    </IconButton>
+                                </Tooltip>
+
+                                {isErasing && (
+                                    <Tooltip title="Adjust Eraser Width">
+                                        <Slider
+                                            value={eraserWidth}
+                                            onChange={handleEraserWidthChange}
+                                            aria-labelledby="eraser-width-slider"
+                                            min={5}
+                                            max={50}
+                                            sx={{ width: 100, color: 'white' }}
                                         />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Adjust Pencil Width">
-                                    <Slider
-                                        value={pencilWidth}
-                                        onChange={handlePencilWidthChange}
-                                        aria-labelledby="pencil-width-slider"
-                                        min={1}
-                                        max={20}
-                                        sx={{ width: 100 }}
-                                    />
-                                </Tooltip>
-                            </>
-                        )}
+                                    </Tooltip>
+                                )}
+                            </Toolbar>
+                        </AppBar>
+                    </>
 
-                        <Tooltip title={isErasing ? "Deactivate Eraser" : "Activate Eraser"}>
-                            <IconButton
-                                color={isErasing ? "primary" : "default"}
-                                onClick={handleEraserToggle}
-                            >
-                                <EraserIcon />
-                            </IconButton>
-                        </Tooltip>
-                        {isErasing && (
-                            <Tooltip title="Adjust Eraser Width">
-                                <Slider
-                                    value={eraserWidth}
-                                    onChange={handleEraserWidthChange}
-                                    aria-labelledby="eraser-width-slider"
-                                    min={5}
-                                    max={50}
-                                    sx={{ width: 100 }}
-                                />
-                            </Tooltip>
-                        )}
-
-
-                    </Box>
 
                     <DropZone onDrop={handleDrop} onClick={handleClickOutside}>
                         <Box
+                            ref={boxRef}
                             sx={{
                                 position: 'relative',
                                 width: '100%',
-                                height: '100%',
+                                height: '600px',
+                                margin: 'auto',
                             }}
                         >
-                            {/* Render Placed Parts */}
                             {placedParts.map((part, index) => (
                                 <Rnd
                                     key={index}
@@ -698,7 +782,7 @@ export default function SketchingBoard() {
                                     position={{ x: part.x, y: part.y }}
                                     onDragStop={(_e, d) => {
                                         if (!part.locked) {
-                                            handleResizeOrDrag(index, { x: d.x, y: d.y });
+                                            handleResizeOrDrag(index, { x: d.x, y: d.y, width: part.width, height: part.height });
                                         }
                                     }}
                                     onResizeStop={(_e, _direction, ref, _delta, position) => {
@@ -730,11 +814,10 @@ export default function SketchingBoard() {
                                     />
                                 </Rnd>
                             ))}
-                            {/* Drawing Canvas */}
                             <canvas
                                 ref={drawingCanvasRef}
-                                width={1270}
-                                height={700}
+                                width={canvasSize.width}
+                                height={canvasSize.height}
                                 style={{
                                     position: 'absolute',
                                     top: 0,
@@ -752,18 +835,18 @@ export default function SketchingBoard() {
                     </DropZone>
                     <canvas
                         ref={canvasRef}
-                        width={1270}
-                        height={700}
+                        width={canvasSize.width}
+                        height={canvasSize.height}
                         style={{ border: "1px solid black", display: "none" }}
                     />
                 </Grid>
                 <Grid item xs={1}>
-                    <Typography variant="h6" marginBottom={8}>
+                    {/* <Typography variant="h6" marginBottom={2}>
                         Steps
-                    </Typography>
+                    </Typography> */}
                     <Box
                         sx={{
-                            maxHeight: 750,
+                            maxHeight: 650,
                             overflowY: "auto",
                             "&::-webkit-scrollbar": {
                                 width: 0,
@@ -803,12 +886,12 @@ export default function SketchingBoard() {
                     </Box>
                 </Grid>
                 <Grid item xs={1}>
-                    <Typography variant="h6" marginBottom={8}>
+                    {/* <Typography variant="h6" marginBottom={8}>
                         Parts
-                    </Typography>
+                    </Typography> */}
                     <Box
                         sx={{
-                            maxHeight: 750,
+                            maxHeight: 650,
                             overflowY: "auto",
                             "&::-webkit-scrollbar": {
                                 width: 0,
