@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Grid, Box, Paper, Typography, Button, Tooltip, IconButton } from "@mui/material";
+import { Grid, Box, Paper, Typography, Button, Tooltip, IconButton, Slider } from "@mui/material";
 import { Rnd } from "react-rnd";
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import CancelIcon from '@mui/icons-material/Cancel';
+import CreateIcon from '@mui/icons-material/Create';
+import ColorLensIcon from '@mui/icons-material/ColorLens';
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
+import EraserIcon from '@mui/icons-material/AutoFixNormal'; // Using AutoFixNormal as an eraser icon
+
 // Constants for item types
 const ItemTypes = {
     BODY_PART: "body_part",
@@ -65,6 +71,12 @@ const bodyParts1 = {
         id: index + 157,
         image: require(`./assets/images/mustach/${String(index + 1).padStart(2, '0')}.png`),
     })),
+    // wearable: Array.from({ length: 24 }, (_, index) => ({
+    //     id: index + 157,
+    //     image: require(`./assets/images/wearable/${String(index + 1).padStart(2, '0')}.png`),
+    // })),
+
+
 };
 
 
@@ -145,6 +157,18 @@ export default function SketchingBoard() {
     const [stepImages, setStepImages] = useState([]);
     const canvasRef = useRef(null);
 
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [isPencilActive, setIsPencilActive] = useState(false);
+    const [pencilColor, setPencilColor] = useState("#000000");
+    const drawingCanvasRef = useRef(null);
+
+    const [pencilWidth, setPencilWidth] = useState(2);
+    const [history, setHistory] = useState([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+
+    const [isErasing, setIsErasing] = useState(false);
+    const [eraserWidth, setEraserWidth] = useState(10);
+
     const handleDrop = (part, monitor) => {
         exportImage();
         const dropZone = document.getElementById("drop-zone");
@@ -159,6 +183,172 @@ export default function SketchingBoard() {
             { ...part, width: 80, height: 80, x, y, locked: false },
         ]);
     };
+
+
+
+    const handleEraserToggle = () => {
+        setIsErasing(!isErasing);
+        setIsPencilActive(false);
+    };
+
+    const handleEraserWidthChange = (event, newValue) => {
+        setEraserWidth(newValue);
+    };
+
+
+    const erase = ({ nativeEvent }) => {
+        if (!isErasing) return;
+        const { offsetX, offsetY } = nativeEvent;
+        const ctx = drawingCanvasRef.current.getContext("2d");
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(offsetX, offsetY, eraserWidth / 2, 0, Math.PI * 2, false);
+        ctx.fill();
+    };
+
+    const startErasing = ({ nativeEvent }) => {
+        if (!isErasing) return;
+        setIsDrawing(true);
+        erase({ nativeEvent });
+    };
+
+    const stopErasing = () => {
+        if (isDrawing) {
+            setIsDrawing(false);
+            saveToHistory();
+        }
+    };
+
+    const draw = ({ nativeEvent }) => {
+        if (!isDrawing) return;
+        if (isPencilActive) {
+            const { offsetX, offsetY } = nativeEvent;
+            const ctx = drawingCanvasRef.current.getContext("2d");
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.lineTo(offsetX, offsetY);
+            ctx.stroke();
+        } else if (isErasing) {
+            erase({ nativeEvent });
+        }
+    };
+
+
+    const saveToHistory = () => {
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push({
+            placedParts: [...placedParts],
+            drawingImage: drawingCanvasRef.current.toDataURL(),
+        });
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+    };
+
+
+    const undo = () => {
+        if (historyIndex > 0) {
+            setHistoryIndex(historyIndex - 1);
+            const previousState = history[historyIndex - 1];
+            setPlacedParts(previousState.placedParts);
+            loadDrawingFromDataURL(previousState.drawingImage);
+        }
+    };
+
+    const redo = () => {
+        if (historyIndex < history.length - 1) {
+            setHistoryIndex(historyIndex + 1);
+            const nextState = history[historyIndex + 1];
+            setPlacedParts(nextState.placedParts);
+            loadDrawingFromDataURL(nextState.drawingImage);
+        }
+    };
+
+
+    const loadDrawingFromDataURL = (dataURL) => {
+        const img = new Image();
+        img.onload = () => {
+            const ctx = drawingCanvasRef.current.getContext('2d');
+            ctx.clearRect(0, 0, drawingCanvasRef.current.width, drawingCanvasRef.current.height);
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = dataURL;
+    };
+
+
+    const startDrawing = ({ nativeEvent }) => {
+        if (isPencilActive) {
+            const { offsetX, offsetY } = nativeEvent;
+            const ctx = drawingCanvasRef.current.getContext("2d");
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.beginPath();
+            ctx.moveTo(offsetX, offsetY);
+            setIsDrawing(true);
+        } else if (isErasing) {
+            startErasing({ nativeEvent });
+        }
+    };
+
+
+    const stopDrawing = () => {
+        if (isDrawing) {
+            if (isPencilActive) {
+                const ctx = drawingCanvasRef.current.getContext("2d");
+                ctx.closePath();
+            }
+            setIsDrawing(false);
+            saveToHistory();
+        }
+    };
+
+    const handlePencilWidthChange = (event, newValue) => {
+        setPencilWidth(newValue);
+        const ctx = drawingCanvasRef.current.getContext("2d");
+        ctx.lineWidth = newValue;
+    };
+
+
+    const handlePencilToggle = () => {
+        setIsPencilActive(!isPencilActive);
+    };
+
+    const handleColorChange = (event) => {
+        setPencilColor(event.target.value);
+        const ctx = drawingCanvasRef.current.getContext("2d");
+        ctx.strokeStyle = event.target.value;
+    };
+
+
+
+    useEffect(() => {
+        if (drawingCanvasRef.current) {
+            const ctx = drawingCanvasRef.current.getContext("2d");
+            ctx.lineWidth = pencilWidth;
+            ctx.strokeStyle = pencilColor;
+            ctx.lineCap = "round";
+        }
+    }, [pencilColor, pencilWidth]);
+
+    // Modify the exportImage function to include the drawing layer
+    const exportImage = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw placed parts
+        placedParts.forEach((part) => {
+            const img = new Image();
+            img.src = part.image;
+            ctx.drawImage(img, part.x, part.y, part.width, part.height);
+        });
+
+        // Draw the content from the drawing canvas
+        ctx.drawImage(drawingCanvasRef.current, 0, 0);
+
+        const imageURL = canvas.toDataURL();
+        setStepImages((prevImages) => [...prevImages, imageURL]);
+    };
+
+
+
 
     const handleResizeOrDrag = (index, newPosition) => {
         const newParts = [...placedParts];
@@ -197,10 +387,19 @@ export default function SketchingBoard() {
         }
     };
 
+
     const handleRemoveAll = () => {
         setPlacedParts([]);
         setSelectedPartIndex(null);
         setSelectedStepIndex(null);
+        clearDrawing();
+        saveToHistory();
+    };
+
+    const clearDrawing = () => {
+        const ctx = drawingCanvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, drawingCanvasRef.current.width, drawingCanvasRef.current.height);
+        saveToHistory();
     };
 
     const handleClickOutside = () => {
@@ -236,11 +435,9 @@ export default function SketchingBoard() {
         setPlacedParts([newPart]);
         setStepImages((prevImages) => prevImages.slice(0, index + 1));
     };
-    const exportImage = () => {
-        const canvas = canvasRef.current;
-        const imageURL = canvas.toDataURL();
-        setStepImages((prevImages) => [...prevImages, imageURL]);
-    };
+
+
+
 
 
 
@@ -371,8 +568,11 @@ export default function SketchingBoard() {
                         Sketching Board
                     </Typography> */}
                     <Box sx={{
-                        display: "flex", gap: 2, marginBottom: 2,
+                        display: "flex",
+                        gap: 2,
+                        marginBottom: 2,
                         maxHeight: 750,
+                        alignItems: "center"
                     }}>
                         <Tooltip title="Clear All">
                             <IconButton
@@ -380,6 +580,24 @@ export default function SketchingBoard() {
                                 onClick={handleRemoveAll}
                             >
                                 <CancelIcon />
+                            </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="Undo">
+                            <IconButton
+                                onClick={undo}
+                                disabled={historyIndex <= 0}
+                            >
+                                <UndoIcon />
+                            </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="Redo">
+                            <IconButton
+                                onClick={redo}
+                                disabled={historyIndex >= history.length - 1}
+                            >
+                                <RedoIcon />
                             </IconButton>
                         </Tooltip>
 
@@ -394,7 +612,7 @@ export default function SketchingBoard() {
                                     </IconButton>
                                 </Tooltip>
 
-                                <Tooltip title="Delete">
+                                <Tooltip title="Remove">
                                     <IconButton
                                         color="error"
                                         onClick={handleRemovePart}
@@ -404,57 +622,142 @@ export default function SketchingBoard() {
                                 </Tooltip>
                             </>
                         )}
+
+                        <Tooltip title={isPencilActive ? "Deactivate Pencil" : "Activate Pencil"}>
+                            <IconButton
+                                color={isPencilActive ? "primary" : "default"}
+                                onClick={() => {
+                                    setIsPencilActive(!isPencilActive);
+                                    setIsErasing(false);
+                                }}
+                            >
+                                <CreateIcon />
+                            </IconButton>
+                        </Tooltip>
+                        {isPencilActive && (
+                            <>
+                                <Tooltip title="Choose Pencil Color">
+                                    <IconButton>
+                                        <ColorLensIcon />
+                                        <input
+                                            type="color"
+                                            value={pencilColor}
+                                            onChange={handleColorChange}
+                                            style={{ opacity: 0, position: 'absolute', width: '100%', height: '100%' }}
+                                        />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Adjust Pencil Width">
+                                    <Slider
+                                        value={pencilWidth}
+                                        onChange={handlePencilWidthChange}
+                                        aria-labelledby="pencil-width-slider"
+                                        min={1}
+                                        max={20}
+                                        sx={{ width: 100 }}
+                                    />
+                                </Tooltip>
+                            </>
+                        )}
+
+                        <Tooltip title={isErasing ? "Deactivate Eraser" : "Activate Eraser"}>
+                            <IconButton
+                                color={isErasing ? "primary" : "default"}
+                                onClick={handleEraserToggle}
+                            >
+                                <EraserIcon />
+                            </IconButton>
+                        </Tooltip>
+                        {isErasing && (
+                            <Tooltip title="Adjust Eraser Width">
+                                <Slider
+                                    value={eraserWidth}
+                                    onChange={handleEraserWidthChange}
+                                    aria-labelledby="eraser-width-slider"
+                                    min={5}
+                                    max={50}
+                                    sx={{ width: 100 }}
+                                />
+                            </Tooltip>
+                        )}
+
+
                     </Box>
 
                     <DropZone onDrop={handleDrop} onClick={handleClickOutside}>
-                        {/* Render Placed Parts */}
-                        {placedParts.map((part, index) => (
-                            <Rnd
-                                key={index}
-                                bounds="parent"
-                                size={{ width: part.width, height: part.height }}
-                                position={{ x: part.x, y: part.y }}
-                                onDragStop={(e, d) => {
-                                    if (!part.locked) {
-                                        handleResizeOrDrag(index, { x: d.x, y: d.y });
-                                    }
-                                }}
-                                onResizeStop={(e, direction, ref, delta, position) => {
-                                    if (!part.locked) {
-                                        handleResizeOrDrag(index, {
-                                            width: ref.offsetWidth,
-                                            height: ref.offsetHeight,
-                                            ...position,
-                                        });
-                                    }
-                                }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPartIndex(index);
-                                }}
-                                style={{
-                                    border:
-                                        selectedPartIndex === index ? "2px solid blue" : "none",
-                                }}
-                                disableDragging={part.locked}
-                            >
-                                <img
-                                    src={part.image}
-                                    alt={part.name}
-                                    style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "contain",
+                        <Box
+                            sx={{
+                                position: 'relative',
+                                width: '100%',
+                                height: '100%',
+                            }}
+                        >
+                            {/* Render Placed Parts */}
+                            {placedParts.map((part, index) => (
+                                <Rnd
+                                    key={index}
+                                    bounds="parent"
+                                    size={{ width: part.width, height: part.height }}
+                                    position={{ x: part.x, y: part.y }}
+                                    onDragStop={(e, d) => {
+                                        if (!part.locked) {
+                                            handleResizeOrDrag(index, { x: d.x, y: d.y });
+                                        }
                                     }}
-                                />
-                            </Rnd>
-                        ))}
+                                    onResizeStop={(e, direction, ref, delta, position) => {
+                                        if (!part.locked) {
+                                            handleResizeOrDrag(index, {
+                                                width: ref.offsetWidth,
+                                                height: ref.offsetHeight,
+                                                ...position,
+                                            });
+                                        }
+                                    }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedPartIndex(index);
+                                    }}
+                                    style={{
+                                        border: selectedPartIndex === index ? "2px solid blue" : "none",
+                                    }}
+                                    disableDragging={part.locked}
+                                >
+                                    <img
+                                        src={part.image}
+                                        alt={part.name}
+                                        style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            objectFit: "contain",
+                                        }}
+                                    />
+                                </Rnd>
+                            ))}
+                            {/* Drawing Canvas */}
+                            <canvas
+                                ref={drawingCanvasRef}
+                                width={1270}
+                                height={700}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    zIndex: 1000,
+                                    pointerEvents: isPencilActive || isErasing ? 'auto' : 'none',
+                                    cursor: isErasing ? 'crosshair' : 'default',
+                                }}
+                                onMouseDown={startDrawing}
+                                onMouseMove={draw}
+                                onMouseUp={stopDrawing}
+                                onMouseOut={stopDrawing}
+                            />
+                        </Box>
                     </DropZone>
                     <canvas
                         ref={canvasRef}
                         width={1270}
                         height={700}
-                        style={{ border: "1px solid black", display: "none" }} // Hide canvas
+                        style={{ border: "1px solid black", display: "none" }}
                     />
                 </Grid>
                 <Grid item xs={1}>
