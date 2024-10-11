@@ -152,6 +152,8 @@ function DropZone({ onDrop, children, onClick }) {
 export default function SketchingBoard() {
     const [placedParts, setPlacedParts] = useState([]);
     const [selectedPartIndex, setSelectedPartIndex] = useState(null);
+    const [selectedkey, setSelectedKey] = useState(null);
+
     const [selectedStepIndex, setSelectedStepIndex] = useState(null);
     const [displayedBodyParts, setDisplayedBodyParts] = useState([]);
     const [stepImages, setStepImages] = useState([]);
@@ -328,22 +330,11 @@ export default function SketchingBoard() {
     // Modify the exportImage function to include the drawing layer
     const exportImage = () => {
         const canvas = canvasRef.current;
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw placed parts
-        placedParts.forEach((part) => {
-            const img = new Image();
-            img.src = part.image;
-            ctx.drawImage(img, part.x, part.y, part.width, part.height);
-        });
-
-        // Draw the content from the drawing canvas
-        ctx.drawImage(drawingCanvasRef.current, 0, 0);
-
         const imageURL = canvas.toDataURL();
         setStepImages((prevImages) => [...prevImages, imageURL]);
     };
+
+
 
 
 
@@ -416,6 +407,8 @@ export default function SketchingBoard() {
     const handleJumpToPart = (index) => {
         setSelectedPartIndex(index);
     };
+
+
     const handleJumpToStep = (index, imageSrc) => {
         setSelectedStepIndex(index);
         const canvas = canvasRef.current;
@@ -501,6 +494,8 @@ export default function SketchingBoard() {
 
 
     const handleShowBodyParts = (key) => {
+        setSelectedKey(key)
+
         setDisplayedBodyParts(bodyParts1[key]);
 
     };
@@ -524,9 +519,13 @@ export default function SketchingBoard() {
                                 <Button
                                     variant="contained"
                                     // color="primary"
-                                    style={{ backgroundColor: '#b7f6f7' }}
                                     onClick={() => handleShowBodyParts(key)}
                                     sx={{ padding: 1 }}
+                                    style={{
+                                        backgroundColor:
+                                            selectedkey === key ? "#c9c9c9" : "#b7f6f7",
+
+                                    }}
                                 >
                                     <img
                                         src={partIcons[key]}
