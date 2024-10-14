@@ -11,14 +11,14 @@ import CreateIcon from '@mui/icons-material/Create';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
-import EraserIcon from '@mui/icons-material/AutoFixNormal'; // Using AutoFixNormal as an eraser icon
+import EraserIcon from '@mui/icons-material/AutoFixNormal';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 
 // Constants for item types
 const ItemTypes = {
     BODY_PART: "body_part",
 };
-
-
 
 const partIcons = {
     head: require('./assets/images/head/01.png'),
@@ -71,16 +71,7 @@ const bodyParts1 = {
         id: index + 157,
         image: require(`./assets/images/mustach/${String(index + 1).padStart(2, '0')}.png`),
     })),
-    // wearable: Array.from({ length: 24 }, (_, index) => ({
-    //     id: index + 157,
-    //     image: require(`./assets/images/wearable/${String(index + 1).padStart(2, '0')}.png`),
-    // })),
-
-
 };
-
-
-
 
 // Draggable component for body parts
 function DraggablePart({ part }) {
@@ -91,7 +82,6 @@ function DraggablePart({ part }) {
             isDragging: !!monitor.isDragging(),
         }),
     }));
-
     return (
         <Paper
             ref={drag}
@@ -172,12 +162,7 @@ export default function SketchingBoard() {
 
     const [isErasing, setIsErasing] = useState(false);
     const [eraserWidth, setEraserWidth] = useState(10);
-
-
     const [selectedTool, setSelectedTool] = useState(null);
-
-
-
     useEffect(() => {
         const updateCanvasSize = () => {
             if (boxRef.current) {
@@ -206,9 +191,6 @@ export default function SketchingBoard() {
             { ...part, width: 70, height: 70, x, y, locked: false },
         ]);
     };
-
-
-
     const handleEraserToggle = () => {
         setIsErasing(!isErasing);
         setIsPencilActive(false);
@@ -217,7 +199,6 @@ export default function SketchingBoard() {
     const handleEraserWidthChange = (_event, newValue) => {
         setEraserWidth(newValue);
     };
-
 
     const erase = ({ nativeEvent }) => {
         if (!isErasing) return;
@@ -233,13 +214,6 @@ export default function SketchingBoard() {
         if (!isErasing) return;
         setIsDrawing(true);
         erase({ nativeEvent });
-    };
-
-    const stopErasing = () => {
-        if (isDrawing) {
-            setIsDrawing(false);
-            saveToHistory();
-        }
     };
 
     const draw = ({ nativeEvent }) => {
@@ -259,7 +233,6 @@ export default function SketchingBoard() {
         }
     };
 
-
     const saveToHistory = () => {
         const newHistory = history.slice(0, historyIndex + 1);
         newHistory.push({
@@ -269,7 +242,6 @@ export default function SketchingBoard() {
         setHistory(newHistory);
         setHistoryIndex(newHistory.length - 1);
     };
-
 
     const undo = () => {
         if (historyIndex > 0) {
@@ -289,7 +261,6 @@ export default function SketchingBoard() {
         }
     };
 
-
     const loadDrawingFromDataURL = (dataURL) => {
         const img = new Image();
         img.onload = () => {
@@ -299,7 +270,6 @@ export default function SketchingBoard() {
         };
         img.src = dataURL;
     };
-
 
     const startDrawing = ({ nativeEvent }) => {
         if (isPencilActive) {
@@ -313,7 +283,6 @@ export default function SketchingBoard() {
             startErasing({ nativeEvent });
         }
     };
-
 
     const stopDrawing = () => {
         if (isDrawing) {
@@ -332,16 +301,11 @@ export default function SketchingBoard() {
         ctx.lineWidth = newValue;
     };
 
-
-
-
     const handleColorChange = (event) => {
         setPencilColor(event.target.value);
         const ctx = drawingCanvasRef.current.getContext("2d");
         ctx.strokeStyle = event.target.value;
     };
-
-
 
     useEffect(() => {
         if (drawingCanvasRef.current) {
@@ -351,18 +315,12 @@ export default function SketchingBoard() {
             ctx.lineCap = "round";
         }
     }, [pencilColor, pencilWidth]);
-
     // Modify the exportImage function to include the drawing layer
     const exportImage = () => {
         const canvas = canvasRef.current;
         const imageURL = canvas.toDataURL();
         setStepImages((prevImages) => [...prevImages, imageURL]);
     };
-
-
-
-
-
 
     const handleResizeOrDrag = (index, newPosition) => {
         const newParts = [...placedParts];
@@ -443,26 +401,31 @@ export default function SketchingBoard() {
     };
 
 
+
+
     const handleJumpToStep = (index, imageSrc) => {
         setSelectedStepIndex(index);
+
+        // Find the exact part from the stepImages array
         const canvas = canvasRef.current;
-        const newPart = {
-            id: `step_${index}`,
-            name: `Step ${index + 1}`,
-            image: imageSrc,
-            width: canvas.width,
-            height: canvas.height,
-            x: 0,
-            y: 0,
-            locked: false,
-        };
+        const savedPart = stepImages[index];
 
-        setPlacedParts([newPart]);
-        setStepImages((prevImages) => prevImages.slice(0, index + 1));
+        if (savedPart) {
+            const newPart = {
+                id: `step_${index}`,
+                name: `Step ${index + 1}`,
+                image: imageSrc,
+                width: savedPart.width,  // Restore the exact width
+                height: savedPart.height, // Restore the exact height
+                x: savedPart.x,           // Restore the exact x position
+                y: savedPart.y,           // Restore the exact y position
+                locked: savedPart.locked,  // Restore if the image was locked
+            };
+
+            setPlacedParts([newPart]); // Set the restored image on the canvas
+            setStepImages((prevImages) => prevImages.slice(0, index + 1)); // Keep history up to this step
+        }
     };
-
-
-
 
 
 
@@ -531,8 +494,31 @@ export default function SketchingBoard() {
         setSelectedKey(key)
 
         setDisplayedBodyParts(bodyParts1[key]);
-
     };
+
+    // Function to move selected part backward (behind another image)
+    const handleMoveToBack = () => {
+        if (selectedPartIndex !== null && selectedPartIndex > 0) {
+            const newParts = [...placedParts];
+            const selectedPart = newParts.splice(selectedPartIndex, 1)[0]; // Remove the selected part
+            newParts.unshift(selectedPart); // Add the part to the beginning (back of the stack)
+            setPlacedParts(newParts);
+            setSelectedPartIndex(0); // Set the index to 0 as it's now at the back
+        }
+    };
+
+    // Function to move selected part forward (in front of other images)
+    const handleMoveToFront = () => {
+        if (selectedPartIndex !== null && selectedPartIndex < placedParts.length - 1) {
+            const newParts = [...placedParts];
+            const selectedPart = newParts.splice(selectedPartIndex, 1)[0]; // Remove the selected part
+            newParts.push(selectedPart); // Add the part to the end (front of the stack)
+            setPlacedParts(newParts);
+            setSelectedPartIndex(newParts.length - 1); // Set the index to the last position
+        }
+    };
+
+
     return (
         <DndProvider backend={HTML5Backend}>
             <Grid container spacing={2}>
@@ -682,6 +668,33 @@ export default function SketchingBoard() {
                                                 }}
                                             >
                                                 <DeleteIcon sx={{ color: selectedTool === "remove" ? "white" : "inherit" }} />
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        <Tooltip title="Move to Front">
+                                            <IconButton
+                                                onClick={handleMoveToFront}
+                                                disabled={selectedPartIndex >= placedParts.length - 1}
+                                                sx={{
+                                                    backgroundColor: selectedTool === "front" ? "#0843a1" : "inherit",
+                                                    color: selectedTool === "front" ? "white" : "inherit",
+                                                }}
+                                            >
+                                                <ArrowUpwardIcon sx={{ color: selectedTool === "front" ? "white" : "inherit" }} />
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        {/* Move to Back Button */}
+                                        <Tooltip title="Move to Back">
+                                            <IconButton
+                                                onClick={handleMoveToBack}
+                                                disabled={selectedPartIndex <= 0}
+                                                sx={{
+                                                    backgroundColor: selectedTool === "back" ? "#0843a1" : "inherit",
+                                                    color: selectedTool === "back" ? "white" : "inherit",
+                                                }}
+                                            >
+                                                <ArrowDownwardIcon sx={{ color: selectedTool === "back" ? "white" : "inherit" }} />
                                             </IconButton>
                                         </Tooltip>
                                     </>
@@ -844,7 +857,7 @@ export default function SketchingBoard() {
                     {/* <Typography variant="h6" marginBottom={2}>
                         Steps
                     </Typography> */}
-                    <Box
+                    {/* <Box
                         sx={{
                             maxHeight: 650,
                             overflowY: "auto",
@@ -883,7 +896,7 @@ export default function SketchingBoard() {
                                 />
                             </Button>
                         ))}
-                    </Box>
+                    </Box> */}
                 </Grid>
                 <Grid item xs={1}>
                     {/* <Typography variant="h6" marginBottom={8}>
