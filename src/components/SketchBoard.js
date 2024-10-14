@@ -576,7 +576,7 @@ export default function SketchingBoard() {
                         ))}
                     </Grid>
                 </Grid>
-                <Grid item xs={8}>
+                <Grid item xs={9}>
                     {/* <Typography variant="h5" gutterBottom>
                         Sketching Board
                     </Typography> */}
@@ -853,11 +853,11 @@ export default function SketchingBoard() {
                         style={{ border: "1px solid black", display: "none" }}
                     />
                 </Grid>
-                <Grid item xs={1}>
-                    {/* <Typography variant="h6" marginBottom={2}>
+                {/* <Grid item xs={1}> */}
+                {/* <Typography variant="h6" marginBottom={2}>
                         Steps
                     </Typography> */}
-                    {/* <Box
+                {/* <Box
                         sx={{
                             maxHeight: 650,
                             overflowY: "auto",
@@ -897,7 +897,7 @@ export default function SketchingBoard() {
                             </Button>
                         ))}
                     </Box> */}
-                </Grid>
+                {/* </Grid> */}
                 <Grid item xs={1}>
                     {/* <Typography variant="h6" marginBottom={8}>
                         Parts
